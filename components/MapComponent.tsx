@@ -99,8 +99,8 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
   };
 
   return (
-    <div className="relative">
-      <MapContainer center={[38.7169, -9.139]} zoom={13} style={{ height: "100vh", width: "100%" }}>
+    <div className="relative z-0">
+      <MapContainer center={[38.7169, -9.139]} zoom={13} style={{ height: "100vh", width: "100%", zIndex: 1 }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

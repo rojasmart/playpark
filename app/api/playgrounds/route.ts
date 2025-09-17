@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
   const seesaw = searchParams.get('playground:seesaw') || null;
   const climb = searchParams.get('playground:climb') || null;
   const climbingNet = searchParams.get('playground:climbing_net') || null;
+  const slider = searchParams.get('playground:slider') || null;
+  const music = searchParams.get('playground:music') || null;
   const bench = searchParams.get('bench') || null;
   
   // Facility filters
@@ -44,6 +46,8 @@ export async function GET(req: NextRequest) {
   if (seesaw === 'yes') filters.push(`["playground:seesaw"="yes"]`);
   if (climb === 'yes') filters.push(`["playground:climb"="yes"]`);
   if (climbingNet === 'yes') filters.push(`["playground:climbing_net"="yes"]`);
+  if (slider === 'yes') filters.push(`["playground:slider"="yes"]`);
+  if (music === 'yes') filters.push(`["playground:music"="yes"]`);
   if (bench === 'yes') filters.push(`["bench"="yes"]`);
   
   // Facility filters

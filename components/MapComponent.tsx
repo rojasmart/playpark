@@ -82,8 +82,10 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
     if (tags["playground:slide:double_deck"] === "yes") amenities.push({ name: "Escorrega 2 Pisos" });
     if (tags["playground:swing"] === "yes") amenities.push({ name: "Baloiços" });
     if (tags["playground:seesaw"] === "yes") amenities.push({ name: "Balancé" });
-    if (tags["playground:climb"] === "yes") amenities.push({ name: "Rede" });
+    if (tags["playground:climb"] === "yes") amenities.push({ name: "Escalada" });
     if (tags["playground:climbing_net"] === "yes") amenities.push({ name: "Rede Arborismo" });
+    if (tags["playground:slider"] === "yes") amenities.push({ name: "Slider" });
+    if (tags["playground:music"] === "yes") amenities.push({ name: "Música" });
     if (tags["bench"] === "yes") amenities.push({ name: "Bancos" });
     if (tags["covered"] === "yes") amenities.push({ name: "Coberto" });
     if (tags["natural_shade"] === "yes") amenities.push({ name: "Sombra c/ Árvores" });

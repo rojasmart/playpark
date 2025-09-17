@@ -123,6 +123,28 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
             />
             <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede Arborismo</span>
           </label>
+
+          <label className="flex items-center space-x-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="playground:slider"
+              checked={filters["playground:slider"] === "yes"}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Slider</span>
+          </label>
+
+          <label className="flex items-center space-x-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="playground:music"
+              checked={filters["playground:music"] === "yes"}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Música</span>
+          </label>
         </div>
       </div>
 

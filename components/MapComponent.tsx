@@ -45,14 +45,22 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
     switch (amenity) {
       case "slide":
         return <span className="text-lg">🛝</span>;
+      case "slide_double_deck":
+        return <span className="text-lg">🏗️</span>;
       case "swing":
         return <span className="text-lg">🪃</span>;
+      case "seesaw":
+        return <span className="text-lg">⚖️</span>;
       case "climb":
         return <span className="text-lg">🧗</span>;
+      case "climbing_net":
+        return <span className="text-lg">🕷️</span>;
       case "bench":
         return <span className="text-lg">🪑</span>;
       case "covered":
         return <span className="text-lg">☂️</span>;
+      case "natural_shade":
+        return <span className="text-lg">🌳</span>;
       case "drinking_water":
         return <span className="text-lg">🚰</span>;
       case "wheelchair":
@@ -70,17 +78,21 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
 
   const getAmenities = (tags: { [key: string]: string } = {}) => {
     const amenities = [];
-    if (tags["playground:slide"] === "yes") amenities.push({ name: "Escorrega", type: "slide" });
-    if (tags["playground:swing"] === "yes") amenities.push({ name: "Baloiços", type: "swing" });
-    if (tags["playground:climb"] === "yes") amenities.push({ name: "Escalada", type: "climb" });
-    if (tags["bench"] === "yes") amenities.push({ name: "Bancos", type: "bench" });
-    if (tags["covered"] === "yes") amenities.push({ name: "Coberto", type: "covered" });
-    if (tags["drinking_water"] === "yes") amenities.push({ name: "Água potável", type: "drinking_water" });
-    if (tags["wheelchair"] === "yes") amenities.push({ name: "Acessível", type: "wheelchair" });
-    if (tags["surface"]) amenities.push({ name: `Superfície: ${tags.surface}`, type: "surface" });
-    if (tags["playground:theme"]) amenities.push({ name: `Tema: ${tags["playground:theme"]}`, type: "theme" });
-    if (tags["min_age"]) amenities.push({ name: `Idade mín: ${tags.min_age} anos`, type: "age" });
-    if (tags["max_age"]) amenities.push({ name: `Idade máx: ${tags.max_age} anos`, type: "age" });
+    if (tags["playground:slide"] === "yes") amenities.push({ name: "Escorrega" });
+    if (tags["playground:slide:double_deck"] === "yes") amenities.push({ name: "Escorrega 2 Pisos" });
+    if (tags["playground:swing"] === "yes") amenities.push({ name: "Baloiços" });
+    if (tags["playground:seesaw"] === "yes") amenities.push({ name: "Balancé" });
+    if (tags["playground:climb"] === "yes") amenities.push({ name: "Rede" });
+    if (tags["playground:climbing_net"] === "yes") amenities.push({ name: "Rede Arborismo" });
+    if (tags["bench"] === "yes") amenities.push({ name: "Bancos" });
+    if (tags["covered"] === "yes") amenities.push({ name: "Coberto" });
+    if (tags["natural_shade"] === "yes") amenities.push({ name: "Sombra c/ Árvores" });
+    if (tags["drinking_water"] === "yes") amenities.push({ name: "Água potável" });
+    if (tags["wheelchair"] === "yes") amenities.push({ name: "Acessível" });
+    if (tags["surface"]) amenities.push({ name: `Superfície: ${tags.surface}` });
+    if (tags["playground:theme"]) amenities.push({ name: `Tema: ${tags["playground:theme"]}` });
+    if (tags["min_age"]) amenities.push({ name: `Idade mín: ${tags.min_age} anos` });
+    if (tags["max_age"]) amenities.push({ name: `Idade máx: ${tags.max_age} anos` });
     return amenities;
   };
 
@@ -162,8 +174,7 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
               <div className="grid grid-cols-2 gap-3">
                 {getAmenities(selectedPlayground.tags).map((amenity, index) => (
                   <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                    {getAmenityIcon(amenity.type)}
-                    <span className="ml-2 text-sm text-gray-700">{amenity.name}</span>
+                    <span className="text-sm text-gray-700">{amenity.name}</span>
                   </div>
                 ))}
                 {getAmenities(selectedPlayground.tags).length === 0 && (

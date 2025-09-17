@@ -6,10 +6,9 @@ interface HeaderProps {
   onAddNewPark?: () => void;
   onSearch?: (query: string) => void;
   onShowFavorites?: () => void;
-  onShowInfo?: () => void;
 }
 
-export default function Header({ onAddNewPark, onSearch, onShowFavorites, onShowInfo }: HeaderProps) {
+export default function Header({ onAddNewPark, onSearch, onShowFavorites }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
@@ -48,14 +47,6 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites, onShow
       onShowFavorites();
     } else {
       alert("Funcionalidade de favoritos em desenvolvimento!");
-    }
-  };
-
-  const handleShowInfo = () => {
-    if (onShowInfo) {
-      onShowInfo();
-    } else {
-      alert("Sobre o Playpark - Encontre os melhores parques infantis da sua região!");
     }
   };
 
@@ -111,16 +102,6 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites, onShow
               title="Favoritos"
             >
               <Heart className="w-5 h-5" />
-            </button>
-
-            {/* Info */}
-            <button
-              onClick={handleShowInfo}
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-              aria-label="Informações"
-              title="Sobre"
-            >
-              <Info className="w-5 h-5" />
             </button>
 
             {/* Add New Park Button */}

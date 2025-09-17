@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Map from "../components/Map";
 import FilterPanel from "../components/FilterPanel";
 import Header from "../components/Header";
+import FloatingInfoButton from "../components/FloatingInfoButton";
 
 interface Playground {
   id: number;
@@ -85,13 +86,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onAddNewPark={handleAddNewPark} onSearch={handleSearch} onShowFavorites={handleShowFavorites} onShowInfo={handleShowInfo} />
+      <Header onAddNewPark={handleAddNewPark} onSearch={handleSearch} onShowFavorites={handleShowFavorites} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <FilterPanel filters={filters} setFilters={setFilters} />
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <Map playgrounds={playgrounds} />
         </div>
       </main>
+      <FloatingInfoButton onShowInfo={handleShowInfo} />
     </div>
   );
 }

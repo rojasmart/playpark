@@ -66,7 +66,18 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               onChange={handleChange}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">🛝 Escorrega</span>
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega</span>
+          </label>
+
+          <label className="flex items-center space-x-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="playground:slide:double_deck"
+              checked={filters["playground:slide:double_deck"] === "yes"}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega 2 Pisos</span>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer group">
@@ -77,7 +88,18 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               onChange={handleChange}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">🪃 Baloiços</span>
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Baloiços</span>
+          </label>
+
+          <label className="flex items-center space-x-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="playground:seesaw"
+              checked={filters["playground:seesaw"] === "yes"}
+              onChange={handleChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Balancé</span>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer group">
@@ -88,18 +110,18 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               onChange={handleChange}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">🧗 Escalada</span>
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede</span>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer group">
             <input
               type="checkbox"
-              name="bench"
-              checked={filters["bench"] === "yes"}
+              name="playground:climbing_net"
+              checked={filters["playground:climbing_net"] === "yes"}
               onChange={handleChange}
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">🪑 Bancos</span>
+            <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede Arborismo</span>
           </label>
         </div>
       </div>
@@ -119,7 +141,18 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                   onChange={handleChange}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">☂️ Coberto</span>
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Coberto</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="natural_shade"
+                  checked={filters["natural_shade"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Sombra c/ Árvores</span>
               </label>
 
               <label className="flex items-center space-x-2 cursor-pointer group">
@@ -130,7 +163,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                   onChange={handleChange}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">🚰 Água potável</span>
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Bebedouro</span>
               </label>
 
               <label className="flex items-center space-x-2 cursor-pointer group">
@@ -141,7 +174,17 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                   onChange={handleChange}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">♿ Acessível</span>
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Acessível Cadeira Rodas</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="bench"
+                  checked={filters["bench"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Bancos</span>
               </label>
             </div>
           </div>

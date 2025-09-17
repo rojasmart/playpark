@@ -8,12 +8,16 @@ export async function GET(req: NextRequest) {
   
   // Equipment filters
   const slide = searchParams.get('playground:slide') || null;
+  const slideDoubleDeck = searchParams.get('playground:slide:double_deck') || null;
   const swing = searchParams.get('playground:swing') || null;
+  const seesaw = searchParams.get('playground:seesaw') || null;
   const climb = searchParams.get('playground:climb') || null;
+  const climbingNet = searchParams.get('playground:climbing_net') || null;
   const bench = searchParams.get('bench') || null;
   
   // Facility filters
   const covered = searchParams.get('covered') || null;
+  const naturalShade = searchParams.get('natural_shade') || null;
   const drinkingWater = searchParams.get('drinking_water') || null;
   const wheelchair = searchParams.get('wheelchair') || null;
   
@@ -35,12 +39,16 @@ export async function GET(req: NextRequest) {
   
   // Equipment filters
   if (slide === 'yes') filters.push(`["playground:slide"="yes"]`);
+  if (slideDoubleDeck === 'yes') filters.push(`["playground:slide:double_deck"="yes"]`);
   if (swing === 'yes') filters.push(`["playground:swing"="yes"]`);
+  if (seesaw === 'yes') filters.push(`["playground:seesaw"="yes"]`);
   if (climb === 'yes') filters.push(`["playground:climb"="yes"]`);
+  if (climbingNet === 'yes') filters.push(`["playground:climbing_net"="yes"]`);
   if (bench === 'yes') filters.push(`["bench"="yes"]`);
   
   // Facility filters
   if (covered === 'yes') filters.push(`["covered"="yes"]`);
+  if (naturalShade === 'yes') filters.push(`["natural_shade"="yes"]`);
   if (drinkingWater === 'yes') filters.push(`["drinking_water"="yes"]`);
   if (wheelchair === 'yes') filters.push(`["wheelchair"="yes"]`);
   

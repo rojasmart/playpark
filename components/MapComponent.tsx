@@ -65,6 +65,8 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
         return <span className="text-lg">🚰</span>;
       case "wheelchair":
         return <span className="text-lg">♿</span>;
+      case "lit":
+        return <span className="text-lg">💡</span>;
       case "surface":
         return <span className="text-lg">🏗️</span>;
       case "theme":
@@ -91,6 +93,7 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
     if (tags["natural_shade"] === "yes") amenities.push({ name: "Sombra c/ Árvores" });
     if (tags["drinking_water"] === "yes") amenities.push({ name: "Água potável" });
     if (tags["wheelchair"] === "yes") amenities.push({ name: "Acessível" });
+    if (tags["lit"] === "yes") amenities.push({ name: "Iluminação nocturna" });
     if (tags["surface"]) amenities.push({ name: `Superfície: ${tags.surface}` });
     if (tags["playground:theme"]) amenities.push({ name: `Tema: ${tags["playground:theme"]}` });
     if (tags["min_age"]) amenities.push({ name: `Idade mín: ${tags.min_age} anos` });

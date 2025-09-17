@@ -11,14 +11,14 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
   };
 
   return (
-    <div className="p-4 flex gap-4 bg-white shadow rounded mb-4">
-      <label>
+    <div className="p-4 flex gap-4 bg-gray-100 shadow rounded mb-4">
+      <label className="text-black">
         <input type="checkbox" name="slide" onChange={handleChange} /> Escorrega
       </label>
-      <label>
+      <label className="text-black">
         <input type="checkbox" name="bench" onChange={handleChange} /> Bancos
       </label>
-      <label>
+      <label className="text-black">
         <input type="checkbox" name="shade" onChange={handleChange} /> Sombra
       </label>
     </div>

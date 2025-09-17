@@ -33,7 +33,7 @@ export default function Home() {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Playground Buddy</h1>
+      <h1 className="text-2xl font-bold mb-4 text-black">Playground Buddy</h1>
       <FilterPanel filters={filters} setFilters={setFilters} />
       <Map playgrounds={playgrounds} />
     </div>

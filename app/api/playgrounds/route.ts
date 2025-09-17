@@ -4,7 +4,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat = searchParams.get('lat') || '38.7169';
   const lon = searchParams.get('lon') || '-9.1390';
-  const radius = searchParams.get('radius') || '10000'; // meters
+  const radius = searchParams.get('radius') || '15000'; // increased to 15km for better Lisbon coverage
   const slide = searchParams.get('slide') || null;
   const bench = searchParams.get('bench') || null;
   const shade = searchParams.get('shade') || null;
@@ -34,3 +34,4 @@ export async function GET(req: NextRequest) {
   const data = await response.json();
   return NextResponse.json(data);
 }
+

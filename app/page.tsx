@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Map from "../components/Map";
 import FilterPanel from "../components/FilterPanel";
+import Header from "../components/Header";
 
 interface Playground {
   id: number;
@@ -35,11 +36,21 @@ export default function Home() {
     fetchPlaygrounds();
   }, [filters]);
 
+  const handleAddNewPark = () => {
+    // TODO: Implement add new park functionality
+    console.log("Add new park clicked");
+    // You can add modal, navigate to form, etc.
+  };
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4 text-black">Playground Buddy</h1>
-      <FilterPanel filters={filters} setFilters={setFilters} />
-      <Map playgrounds={playgrounds} />
+    <div className="min-h-screen bg-gray-50">
+      <Header onAddNewPark={handleAddNewPark} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <FilterPanel filters={filters} setFilters={setFilters} />
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <Map playgrounds={playgrounds} />
+        </div>
+      </main>
     </div>
   );
 }

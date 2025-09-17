@@ -2,7 +2,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState } from "react";
-import { X, Star, MapPin, Clock, Users, Palette, Shield, TreePine } from "lucide-react";
+import { X, Star, MapPin, Clock, Users } from "lucide-react";
 
 interface Playground {
   id: number;

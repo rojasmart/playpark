@@ -8,6 +8,9 @@ interface Playground {
   lat: number;
   lon: number;
   name?: string;
+  tags?: {
+    [key: string]: string;
+  };
 }
 
 export default function Home() {
@@ -23,6 +26,7 @@ export default function Home() {
       lat: el.lat,
       lon: el.lon,
       name: el.tags?.name,
+      tags: el.tags,
     }));
     setPlaygrounds(nodes);
   };

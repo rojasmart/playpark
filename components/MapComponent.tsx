@@ -44,13 +44,25 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
   const getAmenityIcon = (amenity: string) => {
     switch (amenity) {
       case "slide":
-        return <Palette className="w-4 h-4" />;
+        return <span className="text-lg">🛝</span>;
       case "swing":
-        return <Users className="w-4 h-4" />;
+        return <span className="text-lg">🪃</span>;
+      case "climb":
+        return <span className="text-lg">🧗</span>;
       case "bench":
-        return <Shield className="w-4 h-4" />;
-      case "shade":
-        return <TreePine className="w-4 h-4" />;
+        return <span className="text-lg">🪑</span>;
+      case "covered":
+        return <span className="text-lg">☂️</span>;
+      case "drinking_water":
+        return <span className="text-lg">🚰</span>;
+      case "wheelchair":
+        return <span className="text-lg">♿</span>;
+      case "surface":
+        return <span className="text-lg">🏗️</span>;
+      case "theme":
+        return <span className="text-lg">🎨</span>;
+      case "age":
+        return <span className="text-lg">👶</span>;
       default:
         return <MapPin className="w-4 h-4" />;
     }
@@ -59,11 +71,16 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
   const getAmenities = (tags: { [key: string]: string } = {}) => {
     const amenities = [];
     if (tags["playground:slide"] === "yes") amenities.push({ name: "Escorrega", type: "slide" });
-    if (tags["playground:swing"] === "yes") amenities.push({ name: "Baloiço", type: "swing" });
-    if (tags["bench"] === "yes") amenities.push({ name: "Banco", type: "bench" });
-    if (tags["shade"] === "yes") amenities.push({ name: "Sombra", type: "shade" });
+    if (tags["playground:swing"] === "yes") amenities.push({ name: "Baloiços", type: "swing" });
+    if (tags["playground:climb"] === "yes") amenities.push({ name: "Escalada", type: "climb" });
+    if (tags["bench"] === "yes") amenities.push({ name: "Bancos", type: "bench" });
+    if (tags["covered"] === "yes") amenities.push({ name: "Coberto", type: "covered" });
+    if (tags["drinking_water"] === "yes") amenities.push({ name: "Água potável", type: "drinking_water" });
+    if (tags["wheelchair"] === "yes") amenities.push({ name: "Acessível", type: "wheelchair" });
     if (tags["surface"]) amenities.push({ name: `Superfície: ${tags.surface}`, type: "surface" });
-    if (tags["access"]) amenities.push({ name: `Acesso: ${tags.access}`, type: "access" });
+    if (tags["playground:theme"]) amenities.push({ name: `Tema: ${tags["playground:theme"]}`, type: "theme" });
+    if (tags["min_age"]) amenities.push({ name: `Idade mín: ${tags.min_age} anos`, type: "age" });
+    if (tags["max_age"]) amenities.push({ name: `Idade máx: ${tags.max_age} anos`, type: "age" });
     return amenities;
   };
 
@@ -75,7 +92,13 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {playgrounds?.map((playground) => (
-          <Marker key={playground.id} position={[playground.lat, playground.lon]}>
+          <Marker
+            key={playground.id}
+            position={[playground.lat, playground.lon]}
+            eventHandlers={{
+              click: () => handleMarkerClick(playground),
+            }}
+          >
             <Popup>{playground.name || "Parque Infantil"}</Popup>
           </Marker>
         ))}

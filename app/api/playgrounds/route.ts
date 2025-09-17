@@ -4,10 +4,26 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat = searchParams.get('lat') || '38.7169';
   const lon = searchParams.get('lon') || '-9.1390';
-  const radius = searchParams.get('radius') || '15000'; // increased to 15km for better Lisbon coverage
-  const slide = searchParams.get('slide') || null;
+  const radius = searchParams.get('radius') || '15000';
+  
+  // Equipment filters
+  const slide = searchParams.get('playground:slide') || null;
+  const swing = searchParams.get('playground:swing') || null;
+  const climb = searchParams.get('playground:climb') || null;
   const bench = searchParams.get('bench') || null;
-  const shade = searchParams.get('shade') || null;
+  
+  // Facility filters
+  const covered = searchParams.get('covered') || null;
+  const drinkingWater = searchParams.get('drinking_water') || null;
+  const wheelchair = searchParams.get('wheelchair') || null;
+  
+  // Age filters
+  const minAge = searchParams.get('min_age') || null;
+  const maxAge = searchParams.get('max_age') || null;
+  
+  // Surface and theme filters
+  const surface = searchParams.get('surface') || null;
+  const theme = searchParams.get('playground:theme') || null;
 
   // Construct Overpass QL query
   let overpassQuery = `[out:json][timeout:25];
@@ -16,9 +32,27 @@ export async function GET(req: NextRequest) {
 
   // Add filters if any
   let filters: string[] = [];
+  
+  // Equipment filters
   if (slide === 'yes') filters.push(`["playground:slide"="yes"]`);
+  if (swing === 'yes') filters.push(`["playground:swing"="yes"]`);
+  if (climb === 'yes') filters.push(`["playground:climb"="yes"]`);
   if (bench === 'yes') filters.push(`["bench"="yes"]`);
-  if (shade === 'yes') filters.push(`["shade"="yes"]`);
+  
+  // Facility filters
+  if (covered === 'yes') filters.push(`["covered"="yes"]`);
+  if (drinkingWater === 'yes') filters.push(`["drinking_water"="yes"]`);
+  if (wheelchair === 'yes') filters.push(`["wheelchair"="yes"]`);
+  
+  // Age filters
+  if (minAge) filters.push(`["min_age"="${minAge}"]`);
+  if (maxAge) filters.push(`["max_age"="${maxAge}"]`);
+  
+  // Surface filter
+  if (surface) filters.push(`["surface"="${surface}"]`);
+  
+  // Theme filter
+  if (theme) filters.push(`["playground:theme"="${theme}"]`);
 
   if (filters.length > 0) {
     overpassQuery = `[out:json][timeout:25];

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Plus, MapPin, Info, Heart, Search, X } from "lucide-react";
+import Link from "next/link";
 
 interface HeaderProps {
   onAddNewPark?: () => void;
@@ -11,14 +12,6 @@ interface HeaderProps {
 export default function Header({ onAddNewPark, onSearch, onShowFavorites }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-
-  const handleAddNewPark = () => {
-    if (onAddNewPark) {
-      onAddNewPark();
-    } else {
-      alert("Funcionalidade de adicionar parque em desenvolvimento!");
-    }
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,14 +98,14 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
             </button>
 
             {/* Add New Park Button */}
-            <button
-              onClick={handleAddNewPark}
+            <Link
+              href="/add-playground"
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
             >
               <Plus className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Adicionar Parque</span>
               <span className="sm:hidden">Adicionar</span>
-            </button>
+            </Link>
           </div>
         </div>
 

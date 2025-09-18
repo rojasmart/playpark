@@ -32,6 +32,9 @@ export async function GET(req: NextRequest) {
   const surface = searchParams.get("surface") || null;
   const theme = searchParams.get("playground:theme") || null;
 
+  // Rating filter
+  const rating = searchParams.get("rating") || null;
+
   // Construct Overpass QL query
   let overpassQuery = `[out:json][timeout:25];
     node(around:${radius},${lat},${lon})["leisure"="playground"];
@@ -67,6 +70,15 @@ export async function GET(req: NextRequest) {
 
   // Theme filter
   if (theme) filters.push(`["playground:theme"="${theme}"]`);
+
+  // Rating filter - For OSM, we'll use the 'stars' tag which is commonly used for ratings
+  if (rating) {
+    const ratingNum = parseInt(rating);
+    if (ratingNum >= 1 && ratingNum <= 5) {
+      // Filter playgrounds with rating >= specified value
+      filters.push(`["stars">="${ratingNum}"]`);
+    }
+  }
 
   if (filters.length > 0) {
     overpassQuery = `[out:json][timeout:25];

@@ -29,7 +29,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
   return (
     <div className="bg-white shadow-lg rounded-xl border border-gray-200 mb-6">
       {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-blue-600" />
@@ -48,109 +48,127 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
             )}
             <button onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              {isExpanded ? "Menos filtros" : "Mais filtros"}
+              {isExpanded ? "Esconder filtros" : "Mostrar filtros"}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Basic Filters - Always Visible */}
-      <div className="p-4 border-b border-gray-100">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Equipamentos</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:slide"
-              checked={filters["playground:slide"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:slide:double_deck"
-              checked={filters["playground:slide:double_deck"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega 2 Pisos</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:swing"
-              checked={filters["playground:swing"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Baloiços</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:seesaw"
-              checked={filters["playground:seesaw"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Balancé</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:climb"
-              checked={filters["playground:climb"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:climbing_net"
-              checked={filters["playground:climbing_net"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede Arborismo</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:slider"
-              checked={filters["playground:slider"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Slider</span>
-          </label>
-
-          <label className="flex items-center space-x-2 cursor-pointer group">
-            <input
-              type="checkbox"
-              name="playground:music"
-              checked={filters["playground:music"] === "yes"}
-              onChange={handleChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-            />
-            <span className="text-sm text-gray-700 group-hover:text-gray-900">Música</span>
-          </label>
-        </div>
-      </div>
-
-      {/* Advanced Filters - Expandable */}
+      {/* All Filters - Expandable */}
       {isExpanded && (
         <div className="p-4 space-y-6">
+          {/* Equipment */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Equipamentos</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:slide"
+                  checked={filters["playground:slide"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:slide:double_deck"
+                  checked={filters["playground:slide:double_deck"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Escorrega 2 Pisos</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:swing"
+                  checked={filters["playground:swing"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Baloiços</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:seesaw"
+                  checked={filters["playground:seesaw"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Balancé</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:climb"
+                  checked={filters["playground:climb"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:climbing_net"
+                  checked={filters["playground:climbing_net"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Rede Arborismo</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:slider"
+                  checked={filters["playground:slider"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Slider</span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="playground:music"
+                  checked={filters["playground:music"] === "yes"}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <span className="text-sm text-gray-700 group-hover:text-gray-900">Música</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Rating */}
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Avaliação</h3>
+            <select
+              name="rating"
+              value={filters["rating"] || ""}
+              onChange={handleChange}
+              className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Qualquer avaliação</option>
+              <option value="5">⭐⭐⭐⭐⭐ (5 estrelas)</option>
+              <option value="4">⭐⭐⭐⭐ (4+ estrelas)</option>
+              <option value="3">⭐⭐⭐ (3+ estrelas)</option>
+              <option value="2">⭐⭐ (2+ estrelas)</option>
+              <option value="1">⭐ (1+ estrelas)</option>
+            </select>
+          </div>
+
           {/* Facilities */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Comodidades</h3>

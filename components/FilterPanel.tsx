@@ -208,16 +208,6 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                 />
                 <span className="text-sm text-gray-700 group-hover:text-gray-900">Bancos</span>
               </label>
-              <label className="flex items-center space-x-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  name="lit"
-                  checked={filters["lit"] === "yes"}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-sm text-gray-700 group-hover:text-gray-900">Iluminação nocturna</span>
-              </label>
             </div>
           </div>
 
@@ -231,7 +221,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                   name="min_age"
                   value={filters["min_age"] || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm border text-black border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Qualquer</option>
                   <option value="1">1 ano</option>
@@ -248,7 +238,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                   name="max_age"
                   value={filters["max_age"] || ""}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Qualquer</option>
                   <option value="6">6 anos</option>
@@ -270,7 +260,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               name="surface"
               value={filters["surface"] || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Qualquer superfície</option>
               <option value="pebblestone">Pedra britada</option>
@@ -290,7 +280,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               name="playground:theme"
               value={filters["playground:theme"] || ""}
               onChange={handleChange}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Qualquer tema</option>
               <option value="car">Carros</option>

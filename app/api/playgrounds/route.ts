@@ -4,7 +4,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lat = searchParams.get("lat") || "38.7169";
   const lon = searchParams.get("lon") || "-9.1390";
-  const radius = searchParams.get("radius") || "15000";
+  const radius = searchParams.get("radius") || "5000";
 
   // Equipment filters
   const slide = searchParams.get("playground:slide") || null;

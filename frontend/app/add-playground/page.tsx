@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowLeft, MapPin, Plus, Star, Upload } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Star, Upload, X, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 
 interface PlaygroundData {
@@ -76,6 +76,8 @@ export default function AddPlaygroundPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -130,17 +132,141 @@ export default function AddPlaygroundPage() {
     }
   };
 
+  // Função para validar arquivos de imagem
+  const validateImageFile = (file: File): string | null => {
+    // Verificar tipo de arquivo
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      return "Apenas arquivos JPG, JPEG e PNG são permitidos.";
+    }
+
+    // Verificar tamanho do arquivo (5MB máximo)
+    const maxSize = 5 * 1024 * 1024; // 5MB em bytes
+    if (file.size > maxSize) {
+      return "O arquivo deve ter no máximo 5MB.";
+    }
+
+    return null;
+  };
+
+  // Função para selecionar imagens
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+
+    // Verificar limite máximo de 5 imagens
+    const totalImages = selectedImages.length + files.length;
+    if (totalImages > 5) {
+      alert("Máximo de 5 imagens permitidas.");
+      return;
+    }
+
+    // Validar cada arquivo
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    files.forEach((file) => {
+      const error = validateImageFile(file);
+      if (error) {
+        errors.push(`${file.name}: ${error}`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (errors.length > 0) {
+      alert("Erros encontrados:\n" + errors.join("\n"));
+      return;
+    }
+
+    // Adicionar arquivos válidos
+    const newImages = [...selectedImages, ...validFiles];
+    setSelectedImages(newImages);
+
+    // Criar previews
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setImagePreviews((prev) => [...prev, e.target!.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Limpar input
+    event.target.value = "";
+  };
+
+  // Função para remover imagem
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+
+    setSelectedImages(newImages);
+    setImagePreviews(newPreviews);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // Aqui você implementaria a lógica para enviar os dados para o OSM
-      // Por agora, vamos apenas simular o envio
-      console.log("Dados do parque:", formData);
+      // Validação básica
+      if (!formData.name || !formData.latitude || !formData.longitude) {
+        alert("Por favor, preencha os campos obrigatórios: nome, latitude e longitude.");
+        return;
+      }
 
-      // Simular API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Criar FormData para enviar arquivos
+      const submitData = new FormData();
+
+      // Adicionar dados básicos
+      submitData.append("name", formData.name);
+      submitData.append("description", formData.description);
+      submitData.append("lat", formData.latitude.toString());
+      submitData.append("lng", formData.longitude.toString());
+
+      // Adicionar equipamentos (format: playground_slide: "yes"/"no")
+      submitData.append("playground_slide", formData.equipment.slide ? "yes" : "no");
+      submitData.append("playground_swing", formData.equipment.swing ? "yes" : "no");
+      submitData.append("playground_climbingframe", formData.equipment.climb ? "yes" : "no");
+
+      // Adicionar facilidades
+      submitData.append("wheelchair", formData.facilities.wheelchair ? "yes" : "no");
+      submitData.append("covered", formData.facilities.covered ? "yes" : "no");
+      submitData.append("bench", formData.facilities.bench ? "yes" : "no");
+      submitData.append("drinking_water", formData.facilities.drinking_water ? "yes" : "no");
+
+      // Adicionar outros dados
+      if (formData.surface) submitData.append("surface", formData.surface);
+      if (formData.theme) submitData.append("theme", formData.theme);
+      submitData.append("min_age", formData.min_age.toString());
+      submitData.append("max_age", formData.max_age.toString());
+      if (formData.rating > 0) submitData.append("rating", formData.rating.toString());
+
+      // Adicionar imagens
+      selectedImages.forEach((image, index) => {
+        submitData.append("images", image);
+      });
+
+      // Adicionar userId (pode ser obtido do contexto de autenticação)
+      submitData.append("userId", "user_temp_id");
+
+      // Fazer chamada para API
+      console.log("Enviando dados:", Array.from(submitData.entries()));
+
+      const response = await fetch("/api/points", {
+        method: "POST",
+        body: submitData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erro ao criar parque");
+      }
+
+      const result = await response.json();
+      console.log("Parque criado:", result);
 
       alert("Parque adicionado com sucesso! Obrigado pela sua contribuição.");
 
@@ -179,9 +305,14 @@ export default function AddPlaygroundPage() {
         website: "",
         fee: false,
       });
+
+      // Reset imagens
+      setSelectedImages([]);
+      setImagePreviews([]);
+      setCurrentLocation(null);
     } catch (error) {
       console.error("Erro ao adicionar parque:", error);
-      alert("Erro ao adicionar parque. Por favor, tente novamente.");
+      alert(`Erro ao adicionar parque: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -263,6 +394,74 @@ export default function AddPlaygroundPage() {
                 placeholder="Descreva o parque, suas características especiais, estado de conservação, etc."
               />
             </div>
+          </div>
+
+          {/* Upload de Imagens */}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Imagens do Parque</h2>
+            <p className="text-sm text-gray-600 mb-4">Adicione até 5 imagens do parque (JPG, JPEG, PNG - máximo 5MB cada)</p>
+
+            {/* Botão de Upload */}
+            <div className="mb-4">
+              <input type="file" id="image-upload" multiple accept="image/jpeg,image/jpg,image/png" onChange={handleImageSelect} className="hidden" />
+              <label
+                htmlFor="image-upload"
+                className={`
+                  flex flex-col items-center justify-center w-full h-32 border-2 border-dashed 
+                  border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 
+                  transition-colors ${selectedImages.length >= 5 ? "opacity-50 cursor-not-allowed" : ""}
+                `}
+              >
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                  <p className="mb-2 text-sm text-gray-500">
+                    <span className="font-semibold">Clique para enviar</span> ou arraste e solte
+                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, JPEG (máx. 5MB) - {selectedImages.length}/5 imagens</p>
+                </div>
+              </label>
+            </div>
+
+            {/* Preview das Imagens */}
+            {selectedImages.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <div className="relative w-full h-24 bg-gray-100 rounded-lg overflow-hidden">
+                      <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200"></div>
+                    </div>
+
+                    {/* Botão de Remover */}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full 
+                               flex items-center justify-center text-xs hover:bg-red-600 
+                               transform transition-transform hover:scale-110"
+                      title="Remover imagem"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+
+                    {/* Nome do arquivo (truncado) */}
+                    <p className="mt-1 text-xs text-gray-600 truncate" title={selectedImages[index]?.name}>
+                      {selectedImages[index]?.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Informações sobre as imagens */}
+            {selectedImages.length === 0 && (
+              <div className="flex items-center justify-center h-20 text-gray-400">
+                <div className="text-center">
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-sm">Nenhuma imagem selecionada</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Localização */}

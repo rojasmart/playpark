@@ -17,8 +17,14 @@ type Props = {
 export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
   const webviewRef = useRef<any>(null);
 
+  console.log('MobileMap rendering with playgrounds:', playgrounds.length);
+  console.log('Sample playground:', playgrounds[0]);
+
   const html = useMemo(() => {
     const pg = JSON.stringify(playgrounds || []);
+
+    console.log('HTML playgrounds data:', pg);
+
     return `<!doctype html>
     <html>
     <head>
@@ -30,6 +36,12 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
       <div id="map"></div>
       <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
       <script>
+      if (typeof L === 'undefined') {
+       console.error('WebView: Leaflet not loaded - check internet connection');
+         document.body.innerHTML = '<div style="padding:20px;text-align:center;color:red;">Erro: Leaflet não carregou. Verifique conexão à internet.</div>';
+       } else {
+         console.log('WebView: Leaflet loaded successfully');
+       }
         const playgrounds = ${pg};
         const map = L.map('map').setView([38.7223, -9.1393], 13);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);

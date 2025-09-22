@@ -78,7 +78,8 @@ function AppContent() {
   const fetchPlaygrounds = useCallback(async () => {
     try {
       setLoading(true);
-      // Fetch both OSM playgrounds (via frontend Next.js route) and backend points
+      console.log('Fetching playgrounds...');
+
       const params = new URLSearchParams({
         lat: '38.7223',
         lon: '-9.1393',
@@ -88,66 +89,46 @@ function AppContent() {
 
       if (searchQuery) params.append('search', searchQuery);
 
-      const [osmRes, backendRes] = await Promise.all([
-        fetch(`${host}/api/playgrounds?${params}`),
-        fetch(`${host}/api/points?${params}`),
-      ]);
+      // Construct Overpass QL query (same logic as frontend route)
+      let overpassQuery = `[out:json][timeout:25];
+        node(around:10000,38.7223,-9.1393)["leisure"="playground"];
+        out body;`;
 
-      const osmJson = await osmRes.json();
-      const backendJson = await backendRes.json();
+      // Fetch OSM data directly from Overpass API
+      const overpassRes = await fetch(
+        'https://overpass-api.de/api/interpreter',
+        {
+          method: 'POST',
+          body: overpassQuery,
+        },
+      );
 
-      const osmElements = Array.isArray(osmJson.elements)
-        ? osmJson.elements
-        : [];
-      const osmNormalized = osmElements
-        .map((e: any) => ({
-          id: `osm-${e.type}-${e.id}`,
-          lat: Number(e.lat || e.center?.lat),
-          lon: Number(e.lon || e.center?.lon),
-          tags: e.tags || {},
-          images: e.tags?.image
-            ? [e.tags.image]
-            : e.tags?.photo
-            ? [e.tags.photo]
-            : [],
-          description: e.tags?.description || e.tags?.note || undefined,
-        }))
-        .filter((p: any) => !isNaN(p.lat) && !isNaN(p.lon));
+      console.log('Overpass Response status:', overpassRes.status);
+      const overpassData = await overpassRes.json();
+      console.log('Overpass data:', overpassData);
 
-      const backendPoints = Array.isArray(backendJson)
-        ? backendJson
-        : backendJson?.elements || [];
-      const backendNormalized = backendPoints
-        .map((b: any) => ({
-          id: `backend-${b.id || b._id}`,
-          lat: Number(b.lat ?? b.latitude ?? b.lat_gps),
-          lon: Number(b.lon ?? b.longitude ?? b.lon_gps),
-          tags: b.tags || {},
-          images: b.images || [],
-          description: b.description,
-        }))
-        .filter((p: any) => !isNaN(p.lat) && !isNaN(p.lon));
+      // Normalize OSM data (elements array from Overpass)
+      const osmPlaygrounds = (overpassData.elements || []).map(
+        (element: any) => ({
+          id: `osm_${element.id}`,
+          lat: element.lat,
+          lon: element.lon,
+          tags: element.tags || {},
+          source: 'osm',
+          images: element.tags?.image ? [element.tags.image] : [],
+          description: element.tags?.description || element.tags?.name || '',
+        }),
+      );
 
-      // merge & dedupe by rounded coords
-      const all = [...osmNormalized, ...backendNormalized];
-      const seen = new Set();
-      const merged: Playground[] = [];
-      for (const p of all) {
-        const key = `${p.lat.toFixed(5)}:${p.lon.toFixed(5)}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          merged.push(p as Playground);
-        }
-      }
-
-      setPlaygrounds(merged);
+      console.log('Final OSM playgrounds:', osmPlaygrounds);
+      setPlaygrounds(osmPlaygrounds);
     } catch (err) {
       console.warn('Fetch error', err);
       setPlaygrounds([]);
     } finally {
       setLoading(false);
     }
-  }, [host, filters, searchQuery]);
+  }, [filters, searchQuery]);
 
   useEffect(() => {
     // don't auto-fetch to avoid surprising network calls; user taps button.

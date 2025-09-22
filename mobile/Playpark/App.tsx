@@ -37,6 +37,8 @@ type Playground = {
   lat: number;
   lon: number;
   tags?: Record<string, any>;
+  images?: string[];
+  description?: string;
 };
 
 type Props = {
@@ -76,28 +78,69 @@ function AppContent() {
   const fetchPlaygrounds = useCallback(async () => {
     try {
       setLoading(true);
-      // Connect to your Node.js backend points API
+      // Fetch both OSM playgrounds (via frontend Next.js route) and backend points
       const params = new URLSearchParams({
-        lat: '38.7223', // Lisbon coordinates
+        lat: '38.7223',
         lon: '-9.1393',
-        radius: '10000', // 10km radius
+        radius: '10000',
         ...filters,
       });
 
-      if (searchQuery) {
-        params.append('search', searchQuery);
+      if (searchQuery) params.append('search', searchQuery);
+
+      const [osmRes, backendRes] = await Promise.all([
+        fetch(`${host}/api/playgrounds?${params}`),
+        fetch(`${host}/api/points?${params}`),
+      ]);
+
+      const osmJson = await osmRes.json();
+      const backendJson = await backendRes.json();
+
+      const osmElements = Array.isArray(osmJson.elements)
+        ? osmJson.elements
+        : [];
+      const osmNormalized = osmElements
+        .map((e: any) => ({
+          id: `osm-${e.type}-${e.id}`,
+          lat: Number(e.lat || e.center?.lat),
+          lon: Number(e.lon || e.center?.lon),
+          tags: e.tags || {},
+          images: e.tags?.image
+            ? [e.tags.image]
+            : e.tags?.photo
+            ? [e.tags.photo]
+            : [],
+          description: e.tags?.description || e.tags?.note || undefined,
+        }))
+        .filter((p: any) => !isNaN(p.lat) && !isNaN(p.lon));
+
+      const backendPoints = Array.isArray(backendJson)
+        ? backendJson
+        : backendJson?.elements || [];
+      const backendNormalized = backendPoints
+        .map((b: any) => ({
+          id: `backend-${b.id || b._id}`,
+          lat: Number(b.lat ?? b.latitude ?? b.lat_gps),
+          lon: Number(b.lon ?? b.longitude ?? b.lon_gps),
+          tags: b.tags || {},
+          images: b.images || [],
+          description: b.description,
+        }))
+        .filter((p: any) => !isNaN(p.lat) && !isNaN(p.lon));
+
+      // merge & dedupe by rounded coords
+      const all = [...osmNormalized, ...backendNormalized];
+      const seen = new Set();
+      const merged: Playground[] = [];
+      for (const p of all) {
+        const key = `${p.lat.toFixed(5)}:${p.lon.toFixed(5)}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(p as Playground);
+        }
       }
 
-      const res = await fetch(`${host}/api/points?${params}`);
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setPlaygrounds(data);
-      } else if (data.elements) {
-        setPlaygrounds(data.elements as Playground[]);
-      } else {
-        setPlaygrounds([]);
-      }
+      setPlaygrounds(merged);
     } catch (err) {
       console.warn('Fetch error', err);
       setPlaygrounds([]);
@@ -250,7 +293,20 @@ function AppContent() {
             </View>
             <ScrollView style={styles.drawerContent}>
               <View style={styles.drawerPhoto}>
-                {selectedPlayground.tags?.image ? (
+                {selectedPlayground.images &&
+                selectedPlayground.images.length > 0 ? (
+                  <ScrollView horizontal pagingEnabled>
+                    {selectedPlayground.images.map(
+                      (uri: string, idx: number) => (
+                        <Image
+                          key={idx}
+                          source={{ uri }}
+                          style={styles.drawerPhotoImage}
+                        />
+                      ),
+                    )}
+                  </ScrollView>
+                ) : selectedPlayground.tags?.image ? (
                   <Image
                     source={{ uri: selectedPlayground.tags.image }}
                     style={styles.drawerPhotoImage}
@@ -262,26 +318,39 @@ function AppContent() {
                 )}
               </View>
               <Text style={styles.drawerDescription}>
-                {selectedPlayground.tags?.description ||
+                {selectedPlayground.description ||
+                  selectedPlayground.tags?.description ||
                   'Sem descrição disponível'}
               </Text>
               <View style={styles.amenitiesGrid}>
                 <Text style={styles.amenitiesTitle}>Comodidades:</Text>
-                {selectedPlayground.tags?.['playground:slide'] && (
-                  <Text style={styles.amenityItem}>• Escorrega</Text>
-                )}
-                {selectedPlayground.tags?.['playground:swing'] && (
-                  <Text style={styles.amenityItem}>• Baloiço</Text>
-                )}
-                {selectedPlayground.tags?.['playground:climb'] && (
-                  <Text style={styles.amenityItem}>• Escalada</Text>
-                )}
-                {selectedPlayground.tags?.bench && (
-                  <Text style={styles.amenityItem}>• Banco</Text>
-                )}
-                {selectedPlayground.tags?.covered && (
-                  <Text style={styles.amenityItem}>• Coberto</Text>
-                )}
+                {selectedPlayground.tags &&
+                  Object.keys(selectedPlayground.tags).map(key => {
+                    const val = selectedPlayground.tags?.[key];
+                    if (!val) return null;
+                    // filter common playground tags
+                    if (
+                      key.startsWith('playground:') ||
+                      [
+                        'bench',
+                        'covered',
+                        'drinking_water',
+                        'wheelchair',
+                        'natural_shade',
+                        'lit',
+                      ].includes(key)
+                    ) {
+                      const label = key
+                        .replace('playground:', '')
+                        .replace(/_/g, ' ');
+                      return (
+                        <Text key={key} style={styles.amenityItem}>
+                          • {label} {val === 'yes' ? '' : `(${val})`}
+                        </Text>
+                      );
+                    }
+                    return null;
+                  })}
               </View>
             </ScrollView>
           </View>

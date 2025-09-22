@@ -7,6 +7,11 @@ type Playground = {
   lat: number;
   lon: number;
   tags?: Record<string, any>;
+  images?: string[];
+  description?: string;
+  name?: string;
+  rating?: number;
+  ratingCount?: number;
 };
 
 type Props = {
@@ -56,7 +61,7 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
             const lon = parseFloat(p.lon);
             if (!isNaN(lat) && !isNaN(lon)) {
               const m = L.marker([lat, lon]).addTo(map);
-              const title = (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
+             const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
               m.bindPopup(title);
               m.on('click', function() { send({ type: 'markerPress', index: idx, payload: p }); });
             }

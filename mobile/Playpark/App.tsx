@@ -162,6 +162,16 @@ function AppContent() {
         });
       });
 
+      // Debug OSM items too
+      console.log('OSM playgrounds processed:', osmPlaygrounds);
+      osmPlaygrounds.forEach((osm, idx) => {
+        console.log(`OSM item ${idx}:`, {
+          id: osm.id,
+          name: osm.tags?.name,
+          images: osm.images,
+        });
+      });
+
       // Merge OSM + backend data
       const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
 
@@ -276,6 +286,9 @@ function AppContent() {
         <MobileMap
           playgrounds={playgrounds}
           onMarkerPress={p => {
+            console.log('Marker pressed:', p);
+            console.log('Marker name field:', p.name);
+            console.log('Marker id field:', p.id);
             setSelectedPlayground(p);
             setShowDrawer(true);
           }}
@@ -564,8 +577,10 @@ const styles = StyleSheet.create({
   drawerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 16,
+    paddingTop: 24,
+    minHeight: 80,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -573,6 +588,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     flex: 1,
+    marginRight: 16,
+    lineHeight: 24,
   },
   closeButton: {
     fontSize: 24,

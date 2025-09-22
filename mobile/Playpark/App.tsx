@@ -72,8 +72,8 @@ function AppContent() {
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
     Platform.OS === 'android'
-      ? 'http://10.0.2.2:3000'
-      : 'http://localhost:3000';
+      ? 'http://10.0.2.2:5000'
+      : 'http://localhost:5000';
 
   const fetchPlaygrounds = useCallback(async () => {
     try {
@@ -103,9 +103,20 @@ function AppContent() {
         },
       );
 
+      // Fetch your backend points
+      const backendUrl = `${host}/api/points?${params}`;
+      console.log('Fetching Backend URL:', backendUrl);
+
+      const [overpassData, backendData] = await Promise.all([
+        overpassRes.json(),
+        fetch(backendUrl)
+          .then(res => (res.ok ? res.json() : []))
+          .catch(() => []),
+      ]);
+
       console.log('Overpass Response status:', overpassRes.status);
-      const overpassData = await overpassRes.json();
       console.log('Overpass data:', overpassData);
+      console.log('Backend data:', backendData);
 
       // Normalize OSM data (elements array from Overpass)
       const osmPlaygrounds = (overpassData.elements || []).map(
@@ -120,15 +131,31 @@ function AppContent() {
         }),
       );
 
-      console.log('Final OSM playgrounds:', osmPlaygrounds);
-      setPlaygrounds(osmPlaygrounds);
+      // Normalize backend data
+      const backendPlaygrounds = (
+        Array.isArray(backendData) ? backendData : []
+      ).map((item: any) => ({
+        id: `backend_${item.id}`,
+        lat: Number(item.lat || item.latitude),
+        lon: Number(item.lon || item.longitude),
+        tags: item.tags || {},
+        source: 'backend',
+        images: item.images || [],
+        description: item.description || '',
+      }));
+
+      // Merge OSM + backend data
+      const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
+
+      console.log('Final merged playgrounds:', allPlaygrounds);
+      setPlaygrounds(allPlaygrounds);
     } catch (err) {
       console.warn('Fetch error', err);
       setPlaygrounds([]);
     } finally {
       setLoading(false);
     }
-  }, [filters, searchQuery]);
+  }, [host, filters, searchQuery]);
 
   useEffect(() => {
     // don't auto-fetch to avoid surprising network calls; user taps button.

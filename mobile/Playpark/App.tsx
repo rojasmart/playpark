@@ -298,27 +298,6 @@ function AppContent() {
         </TouchableOpacity>
       </View>
 
-      {/* Playground List */}
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 20 }} size="large" />
-      ) : (
-        <FlatList
-          data={playgrounds}
-          keyExtractor={i => String(i.id)}
-          renderItem={renderItem}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>
-                Nenhum parque carregado. Use os filtros ou pesquisa.
-              </Text>
-            </View>
-          )}
-        />
-      )}
-
       {/* Playground Details Drawer */}
       <Modal
         visible={showDrawer}
@@ -501,7 +480,7 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   mapContainer: {
-    height: 300,
+    flex: 1,
     backgroundColor: '#e5e7eb',
     margin: 16,
     borderRadius: 8,

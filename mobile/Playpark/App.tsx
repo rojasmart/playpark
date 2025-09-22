@@ -144,11 +144,23 @@ function AppContent() {
         tags: item.tags || {},
         source: 'backend',
         images: item.appData?.images?.map((img: any) => img.url) || [],
-        description: item.description || item.name || '',
+        description: item.description || '',
         name: item.name,
         rating: item.appData?.rating?.average || 0,
         ratingCount: item.appData?.rating?.count || 0,
       }));
+
+      // Debug backend items specifically
+      console.log('Backend playgrounds processed:', backendPlaygrounds);
+      backendPlaygrounds.forEach((bg, idx) => {
+        console.log(`Backend item ${idx}:`, {
+          id: bg.id,
+          name: bg.name,
+          images: bg.images,
+          lat: bg.lat,
+          lon: bg.lon,
+        });
+      });
 
       // Merge OSM + backend data
       const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
@@ -329,13 +341,19 @@ function AppContent() {
               <View style={styles.drawerPhoto}>
                 {selectedPlayground.images &&
                 selectedPlayground.images.length > 0 ? (
-                  <ScrollView horizontal pagingEnabled>
+                  <ScrollView
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.imageSlider}
+                  >
                     {selectedPlayground.images.map(
                       (uri: string, idx: number) => (
                         <Image
                           key={idx}
                           source={{ uri }}
                           style={styles.drawerPhotoImage}
+                          resizeMode="cover"
                         />
                       ),
                     )}
@@ -570,7 +588,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   drawerPhotoImage: {
-    width: '100%',
+    width: Dimensions.get('window').width - 32, // full width minus margins
     height: '100%',
   },
   drawerPhotoPlaceholder: {
@@ -607,6 +625,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#f59e0b',
     fontWeight: '600',
+  },
+  imageSlider: {
+    flex: 1,
   },
 });
 

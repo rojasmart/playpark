@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, UrlTile, Region } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 
 type Playground = {
   id: number | string;
@@ -15,50 +15,65 @@ type Props = {
 };
 
 export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
-  const initialRegion: Region = {
-    latitude: 38.7223,
-    longitude: -9.1393,
-    latitudeDelta: 0.15,
-    longitudeDelta: 0.15,
-  };
+  const webviewRef = useRef<any>(null);
+
+  const html = useMemo(() => {
+    const pg = JSON.stringify(playgrounds || []);
+    return `<!doctype html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+      <style>html,body,#map{height:100%;margin:0;padding:0} .leaflet-control-attribution{display:none!important}</style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script>
+        const playgrounds = ${pg};
+        const map = L.map('map').setView([38.7223, -9.1393], 13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        function send(msg) {
+          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+          }
+        }
+        playgrounds.forEach((p, idx) => {
+          try {
+            const lat = parseFloat(p.lat);
+            const lon = parseFloat(p.lon);
+            if (!isNaN(lat) && !isNaN(lon)) {
+              const m = L.marker([lat, lon]).addTo(map);
+              const title = (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
+              m.bindPopup(title);
+              m.on('click', function() { send({ type: 'markerPress', index: idx, payload: p }); });
+            }
+          } catch(e) { /* ignore malformed items */ }
+        });
+      </script>
+    </body>
+    </html>`;
+  }, [playgrounds]);
 
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={initialRegion}
-        // provider default: on Android this uses Google Maps SDK
-        showsUserLocation={false}
-      >
-        {/* Use tile.openstreetmap.org (no {s}) to avoid subdomain issues */}
-        <UrlTile
-          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maximumZ={19}
-        />
-
-        {/* test marker(s) */}
-        <Marker
-          key="test"
-          coordinate={{ latitude: 38.7223, longitude: -9.1393 }}
-          title="Lisboa (teste)"
-          description="Marker de teste"
-          onPress={() => {
-            if (playgrounds && playgrounds.length > 0) {
-              onMarkerPress?.(playgrounds[0]);
+      <WebView
+        ref={webviewRef}
+        originWhitelist={['*']}
+        source={{ html }}
+        style={styles.web}
+        onMessage={(event: any) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data && data.type === 'markerPress') {
+              const p = data.payload;
+              onMarkerPress?.(p);
             }
-          }}
-        />
-
-        {playgrounds.map(p => (
-          <Marker
-            key={String(p.id)}
-            coordinate={{ latitude: Number(p.lat), longitude: Number(p.lon) }}
-            title={p.tags?.name || `Parque ${p.id}`}
-            description={p.tags?.description || undefined}
-            onPress={() => onMarkerPress?.(p)}
-          />
-        ))}
-      </MapView>
+          } catch (e) {
+            // ignore
+          }
+        }}
+      />
     </View>
   );
 }
@@ -66,4 +81,5 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  web: { flex: 1, backgroundColor: 'transparent' },
 });

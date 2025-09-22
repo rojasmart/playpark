@@ -29,7 +29,7 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 //import MapView, { Marker } from 'react-native-maps';
-//import MobileMap from './components/Map';
+import MobileMap from './components/Map';
 import FilterPanel from './components/FilterPanel';
 
 type Playground = {
@@ -197,13 +197,13 @@ function AppContent() {
 
       {/* Map with OpenStreetMap playgrounds */}
       <View style={styles.mapContainer}>
-        {/*  <MobileMap
+        <MobileMap
           playgrounds={playgrounds}
           onMarkerPress={p => {
             setSelectedPlayground(p);
             setShowDrawer(true);
           }}
-        /> */}
+        />
         <TouchableOpacity style={styles.loadButton} onPress={fetchPlaygrounds}>
           <Text style={styles.loadButtonText}>Carregar Parques</Text>
         </TouchableOpacity>

@@ -39,6 +39,9 @@ type Playground = {
   tags?: Record<string, any>;
   images?: string[];
   description?: string;
+  name?: string;
+  rating?: number;
+  ratingCount?: number;
 };
 
 type Props = {
@@ -135,13 +138,16 @@ function AppContent() {
       const backendPlaygrounds = (
         Array.isArray(backendData) ? backendData : []
       ).map((item: any) => ({
-        id: `backend_${item.id}`,
-        lat: Number(item.lat || item.latitude),
-        lon: Number(item.lon || item.longitude),
+        id: `backend_${item._id}`,
+        lat: item.location?.coordinates?.[1] || 0, // GeoJSON format: [lon, lat]
+        lon: item.location?.coordinates?.[0] || 0,
         tags: item.tags || {},
         source: 'backend',
-        images: item.images || [],
-        description: item.description || '',
+        images: item.appData?.images?.map((img: any) => img.url) || [],
+        description: item.description || item.name || '',
+        name: item.name,
+        rating: item.appData?.rating?.average || 0,
+        ratingCount: item.appData?.rating?.count || 0,
       }));
 
       // Merge OSM + backend data
@@ -169,9 +175,16 @@ function AppContent() {
 
   function renderItem({ item }: { item: Playground }) {
     const title =
-      item.tags?.name || item.tags?.['operator'] || `Playground ${item.id}`;
+      item.name ||
+      item.tags?.name ||
+      item.tags?.['operator'] ||
+      `Playground ${item.id}`;
     const addr = item.tags?.['addr:street'] || item.tags?.['addr:full'] || '';
-    const photo = item.tags?.image || item.tags?.photo || null;
+    const photo =
+      (item.images && item.images[0]) ||
+      item.tags?.image ||
+      item.tags?.photo ||
+      null;
 
     return (
       <TouchableOpacity
@@ -291,10 +304,23 @@ function AppContent() {
         {selectedPlayground && (
           <View style={styles.drawer}>
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>
-                {selectedPlayground.tags?.name ||
-                  `Parque ${selectedPlayground.id}`}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.drawerTitle}>
+                  {selectedPlayground.name ||
+                    selectedPlayground.tags?.name ||
+                    `Parque ${selectedPlayground.id}`}
+                </Text>
+                {selectedPlayground.rating && selectedPlayground.rating > 0 && (
+                  <View style={styles.ratingContainer}>
+                    <Text style={styles.ratingText}>
+                      {'⭐'.repeat(Math.round(selectedPlayground.rating))}
+                      {selectedPlayground.rating.toFixed(1)}
+                      {selectedPlayground.ratingCount &&
+                        ` (${selectedPlayground.ratingCount})`}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <TouchableOpacity onPress={() => setShowDrawer(false)}>
                 <Text style={styles.closeButton}>✕</Text>
               </TouchableOpacity>
@@ -573,6 +599,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginBottom: 4,
+  },
+  ratingContainer: {
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#f59e0b',
+    fontWeight: '600',
   },
 });
 

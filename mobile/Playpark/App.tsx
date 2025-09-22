@@ -66,7 +66,7 @@ function AppContent() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPlayground, setSelectedPlayground] =
     useState<Playground | null>(null);
@@ -277,7 +277,7 @@ function AppContent() {
         </TouchableOpacity>
 
         {showFilters && (
-          <FilterPanel filters={filters} setFilters={setFilters as any} />
+          <FilterPanel filters={filters} setFilters={setFilters} />
         )}
       </View>
 

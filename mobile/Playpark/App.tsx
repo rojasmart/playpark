@@ -29,8 +29,8 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 //import MapView, { Marker } from 'react-native-maps';
-import MobileMap from './components/Map';
-import FilterPanel from './components/FilterPanel';
+import Map from './components/Map';
+import FilterScreen from './components/FilterScreen';
 
 type Playground = {
   id: number | string;
@@ -67,7 +67,8 @@ function AppContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterScreen, setShowFilterScreen] = useState(false);
+  const [showDrawerMenu, setShowDrawerMenu] = useState(false);
   const [selectedPlayground, setSelectedPlayground] =
     useState<Playground | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
@@ -164,7 +165,7 @@ function AppContent() {
 
       // Debug OSM items too
       console.log('OSM playgrounds processed:', osmPlaygrounds);
-      osmPlaygrounds.forEach((osm, idx) => {
+      osmPlaygrounds.forEach((osm: any, idx: number) => {
         console.log(`OSM item ${idx}:`, {
           id: osm.id,
           name: osm.tags?.name,
@@ -250,53 +251,59 @@ function AppContent() {
     <View style={[styles.container, { paddingTop: safeAreaInsets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Playpark</Text>
-        <View style={styles.searchContainer}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Pesquisar parques..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={fetchPlaygrounds}
-          />
-        </View>
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Filter Area */}
-      <View style={styles.filterArea}>
         <TouchableOpacity
-          style={styles.filterToggle}
-          onPress={() => setShowFilters(!showFilters)}
+          style={styles.hamburgerButton}
+          onPress={() => setShowDrawerMenu(!showDrawerMenu)}
         >
-          <Text style={styles.filterToggleText}>
-            Filtros {showFilters ? '▲' : '▼'}
-          </Text>
+          <Text style={styles.hamburgerText}>☰</Text>
         </TouchableOpacity>
 
-        {showFilters && (
-          <FilterPanel filters={filters} setFilters={setFilters} />
-        )}
+        <Text style={styles.logo}>Playpark</Text>
+
+        <TouchableOpacity
+          style={styles.filterButton}
+          onPress={() => setShowFilterScreen(true)}
+        >
+          <Text style={styles.filterButtonText}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Map with OpenStreetMap playgrounds */}
-      <View style={styles.mapContainer}>
-        <MobileMap
-          playgrounds={playgrounds}
-          onMarkerPress={p => {
-            console.log('Marker pressed:', p);
-            console.log('Marker name field:', p.name);
-            console.log('Marker id field:', p.id);
-            setSelectedPlayground(p);
-            setShowDrawer(true);
-          }}
+      {/* Filter Screen */}
+      {showFilterScreen && (
+        <FilterScreen
+          onBack={() => setShowFilterScreen(false)}
+          filters={filters}
+          onFiltersChange={setFilters}
         />
-        <TouchableOpacity style={styles.loadButton} onPress={fetchPlaygrounds}>
-          <Text style={styles.loadButtonText}>Carregar Parques</Text>
-        </TouchableOpacity>
-      </View>
+      )}
+
+      {/* Map with playgrounds and floating search */}
+      {!showFilterScreen && (
+        <View style={styles.mapContainer}>
+          <Map
+            playgrounds={playgrounds}
+            onMarkerPress={(p: Playground) => {
+              console.log('Marker pressed:', p);
+              console.log('Marker name field:', p.name);
+              console.log('Marker id field:', p.id);
+              setSelectedPlayground(p);
+              setShowDrawer(true);
+            }}
+          />
+
+          <TouchableOpacity
+            style={styles.loadButton}
+            onPress={fetchPlaygrounds}
+          >
+            <Text style={styles.loadButtonText}>Carregar Parques</Text>
+          </TouchableOpacity>
+
+          {/* Bottom Search Bar */}
+          <View style={styles.bottomSearch}>
+            <Text style={styles.searchPlaceholder}>Pesquisar parques...</Text>
+          </View>
+        </View>
+      )}
 
       {/* Playground Details Drawer */}
       <Modal
@@ -412,6 +419,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -421,8 +429,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#0ea5ff',
-    flex: 0,
-    marginRight: 12,
+    textAlign: 'center',
+    flex: 1,
   },
   searchContainer: {
     flex: 1,
@@ -624,6 +632,56 @@ const styles = StyleSheet.create({
   },
   imageSlider: {
     flex: 1,
+  },
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hamburgerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  rightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerSpacer: {
+    flex: 1,
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterButtonText: {
+    fontSize: 16,
+  },
+  bottomSearch: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  searchPlaceholder: {
+    fontSize: 16,
+    color: '#999',
   },
 });
 

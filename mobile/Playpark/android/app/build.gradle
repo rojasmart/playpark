@@ -117,3 +117,14 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+def rnVectorIconsFonts = "../../node_modules/react-native-vector-icons/fonts.gradle"
+def rnVectorIconsFontsAlt = "../../node_modules/react-native-vector-icons/lib/fonts.gradle"
+
+if (file(rnVectorIconsFonts).exists()) {
+    apply from: rnVectorIconsFonts
+} else if (file(rnVectorIconsFontsAlt).exists()) {
+    apply from: rnVectorIconsFontsAlt
+} else {
+    println("react-native-vector-icons fonts.gradle not found, skipping fonts copy. If you want icons, install the package or copy fonts manually.")
+}

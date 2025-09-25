@@ -31,6 +31,7 @@ import {
 //import MapView, { Marker } from 'react-native-maps';
 import Map from './components/Map';
 import FilterScreen from './components/FilterScreen';
+import Filter from 'react-native-vector-icons/MaterialDesignIcons';
 
 type Playground = {
   id: number | string;
@@ -264,7 +265,9 @@ function AppContent() {
           style={styles.filterButton}
           onPress={() => setShowFilterScreen(true)}
         >
-          <Text style={styles.filterButtonText}>⚙️</Text>
+          <Text style={styles.filterButtonText}>
+            <Filter name="filter" size={22} color="#333" />
+          </Text>
         </TouchableOpacity>
       </View>
 

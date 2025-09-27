@@ -18,6 +18,9 @@ interface RegisterScreenProps {
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
   const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -67,8 +70,35 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
       return;
     }
 
+    if (!address.trim()) {
+      Alert.alert('Erro', 'Por favor, insira a morada do parque');
+      return;
+    }
+
+    if (!latitude.trim() || !longitude.trim()) {
+      Alert.alert(
+        'Erro',
+        'Por favor, insira as coordenadas (latitude e longitude)',
+      );
+      return;
+    }
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      Alert.alert(
+        'Erro',
+        'Coordenadas inválidas. Use números com ponto decimal (ex: 38.7223)',
+      );
+      return;
+    }
+
     const playgroundData = {
       name: name.trim(),
+      address: address.trim(),
+      latitude: lat,
+      longitude: lng,
       description: description.trim(),
       photos,
       amenities: selectedAmenities,
@@ -110,9 +140,30 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
           <TextInput
             style={styles.textInput}
             placeholder="Digite a morada do parque"
-            value={name}
-            onChangeText={setName}
+            value={address}
+            onChangeText={setAddress}
           />
+        </View>
+
+        {/* Coordenadas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Coordenadas *</Text>
+          <View style={styles.coordinatesContainer}>
+            <TextInput
+              style={[styles.textInput, styles.coordinateInput]}
+              placeholder="Latitude (ex: 38.7223)"
+              value={latitude}
+              onChangeText={setLatitude}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={[styles.textInput, styles.coordinateInput]}
+              placeholder="Longitude (ex: -9.1393)"
+              value={longitude}
+              onChangeText={setLongitude}
+              keyboardType="numeric"
+            />
+          </View>
         </View>
 
         {/* Descrição */}
@@ -148,16 +199,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
               ))}
             </View>
           )}
-        </View>
-        {/*Localização do Parque */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Localização do Parque *</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Digite a localização do parque"
-            value={name}
-            onChangeText={setName}
-          />
         </View>
 
         {/* Comodidades por Categoria */}
@@ -304,6 +345,13 @@ const styles = StyleSheet.create({
   amenityTextSelected: {
     color: '#fff',
     fontWeight: '500',
+  },
+  coordinatesContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  coordinateInput: {
+    flex: 1,
   },
 });
 

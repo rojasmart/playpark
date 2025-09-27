@@ -205,23 +205,85 @@ function AppContent() {
     async (playgroundData: any) => {
       try {
         console.log('Saving playground:', playgroundData);
-        // TODO: Implementar chamada à API para salvar o parque
-        // const response = await fetch(`${host}/api/playgrounds`, {
-        //   method: 'POST',
-        //   headers: { 'Content-Type': 'application/json' },
-        //   body: JSON.stringify(playgroundData),
-        // });
-        // if (response.ok) {
-        //   // Refresh playgrounds after saving
-        //   await fetchPlaygrounds();
-        // }
-        Alert.alert('Sucesso', 'Parque registado com sucesso!');
+
+        // Mapear dados do RegisterScreen para formato do backend
+        const backendData = {
+          name: playgroundData.name,
+          description: playgroundData.description,
+          lat: playgroundData.latitude,
+          lng: playgroundData.longitude,
+          // Mapear comodidades para tags OSM
+          wheelchair: playgroundData.amenities.includes(
+            'Acessível Cadeira Rodas',
+          )
+            ? 'yes'
+            : undefined,
+          covered: playgroundData.amenities.includes('Coberto')
+            ? 'yes'
+            : undefined,
+          bench: playgroundData.amenities.includes('Bancos')
+            ? 'yes'
+            : undefined,
+          drinking_water: playgroundData.amenities.includes('Bebedouro')
+            ? 'yes'
+            : undefined,
+          playground_slide:
+            playgroundData.amenities.includes('Escorrega') ||
+            playgroundData.amenities.includes('Escorrega 2 pisos')
+              ? 'yes'
+              : undefined,
+          playground_swing: playgroundData.amenities.includes('Baloiços')
+            ? 'yes'
+            : undefined,
+          playground_climbingframe:
+            playgroundData.amenities.includes('Rede') ||
+            playgroundData.amenities.includes('Rede Arborismo')
+              ? 'yes'
+              : undefined,
+          // Mapear superfície
+          surface: playgroundData.amenities
+            .find((a: string) =>
+              ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'].includes(a),
+            )
+            ?.toLowerCase(),
+          // Mapear tema
+          theme: playgroundData.amenities
+            .find((a: string) =>
+              [
+                'Aventura',
+                'Natureza',
+                'Desporto',
+                'Inclusivo',
+                'Tradicional',
+              ].includes(a),
+            )
+            ?.toLowerCase(),
+          userId: 'mobile-app-user',
+        };
+
+        const response = await fetch(`${host}/api/points`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(backendData),
+        });
+
+        if (response.ok) {
+          const savedPlayground = await response.json();
+          console.log('Playground saved successfully:', savedPlayground);
+          Alert.alert('Sucesso', 'Parque registado com sucesso!');
+          // Refresh playgrounds after saving
+          await fetchPlaygrounds();
+        } else {
+          const errorData = await response.json();
+          console.error('API Error:', errorData);
+          Alert.alert('Erro', errorData.error || 'Falha ao registar o parque');
+        }
       } catch (error) {
         console.error('Error saving playground:', error);
-        Alert.alert('Erro', 'Falha ao registar o parque');
+        Alert.alert('Erro', 'Falha ao conectar com o servidor');
       }
     },
-    [host],
+    [host, fetchPlaygrounds],
   );
 
   function renderItem({ item }: { item: Playground }) {

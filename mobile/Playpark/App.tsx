@@ -212,41 +212,35 @@ function AppContent() {
           description: playgroundData.description,
           lat: playgroundData.latitude,
           lng: playgroundData.longitude,
-          // Mapear comodidades para tags OSM
-          wheelchair: playgroundData.amenities.includes(
-            'Acessível Cadeira Rodas',
-          )
-            ? 'yes'
-            : undefined,
-          covered: playgroundData.amenities.includes('Coberto')
-            ? 'yes'
-            : undefined,
-          bench: playgroundData.amenities.includes('Bancos')
-            ? 'yes'
-            : undefined,
-          drinking_water: playgroundData.amenities.includes('Bebedouro')
-            ? 'yes'
-            : undefined,
-          playground_slide:
-            playgroundData.amenities.includes('Escorrega') ||
-            playgroundData.amenities.includes('Escorrega 2 pisos')
-              ? 'yes'
-              : undefined,
-          playground_swing: playgroundData.amenities.includes('Baloiços')
-            ? 'yes'
-            : undefined,
-          playground_climbingframe:
-            playgroundData.amenities.includes('Rede') ||
-            playgroundData.amenities.includes('Rede Arborismo')
-              ? 'yes'
-              : undefined,
-          // Mapear superfície
+          // Comodidades mapeadas diretamente (formato que o backend espera)
           surface: playgroundData.amenities
             .find((a: string) =>
               ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'].includes(a),
             )
             ?.toLowerCase(),
-          // Mapear tema
+          wheelchair: playgroundData.amenities.includes(
+            'Acessível Cadeira Rodas',
+          )
+            ? 'yes'
+            : 'no',
+          covered: playgroundData.amenities.includes('Coberto') ? 'yes' : 'no',
+          bench: playgroundData.amenities.includes('Bancos') ? 'yes' : 'no',
+          drinking_water: playgroundData.amenities.includes('Bebedouro')
+            ? 'yes'
+            : 'no',
+          playground_slide:
+            playgroundData.amenities.includes('Escorrega') ||
+            playgroundData.amenities.includes('Escorrega 2 pisos')
+              ? 'yes'
+              : 'no',
+          playground_swing: playgroundData.amenities.includes('Baloiços')
+            ? 'yes'
+            : 'no',
+          playground_climbingframe:
+            playgroundData.amenities.includes('Rede') ||
+            playgroundData.amenities.includes('Rede Arborismo')
+              ? 'yes'
+              : 'no',
           theme: playgroundData.amenities
             .find((a: string) =>
               [
@@ -258,6 +252,22 @@ function AppContent() {
               ].includes(a),
             )
             ?.toLowerCase(),
+          min_age: playgroundData.amenities.includes('0-2 anos')
+            ? '0'
+            : playgroundData.amenities.includes('2-5 anos')
+            ? '2'
+            : playgroundData.amenities.includes('5-12 anos')
+            ? '5'
+            : undefined,
+          max_age: playgroundData.amenities.includes('0-2 anos')
+            ? '2'
+            : playgroundData.amenities.includes('2-5 anos')
+            ? '5'
+            : playgroundData.amenities.includes('5-12 anos')
+            ? '12'
+            : playgroundData.amenities.includes('12+ anos')
+            ? '99'
+            : undefined,
           userId: 'mobile-app-user',
         };
 

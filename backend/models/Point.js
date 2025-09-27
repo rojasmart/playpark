@@ -10,11 +10,20 @@ const pointSchema = new mongoose.Schema(
     },
 
     // Dados básicos (compatíveis com OSM)
-    name: String,
+    name: { type: String, required: true },
     description: String,
+    // location suporta GeoJSON { type: 'Point', coordinates: [lng, lat] }
+    // e mantém lat/lng por compatibilidade
     location: {
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: { type: [Number] }, // [lng, lat]
+      // legacy fields (optional)
+      lat: Number,
+      lng: Number,
     },
 
     // Tags do OSM (estrutura similar)
@@ -74,5 +83,34 @@ const pointSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// 2dsphere index for GeoJSON queries
+pointSchema.index({ location: "2dsphere" });
+
+// Normalize location before validation: keep coordinates and lat/lng in sync
+pointSchema.pre("validate", function (next) {
+  if (!this.location) return next();
+
+  // If coordinates exist (GeoJSON), fill legacy lat/lng
+  if (Array.isArray(this.location.coordinates) && this.location.coordinates.length >= 2) {
+    const lng = parseFloat(this.location.coordinates[0]);
+    const lat = parseFloat(this.location.coordinates[1]);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      this.location.type = "Point";
+      this.location.lat = lat;
+      this.location.lng = lng;
+    }
+  } else if (typeof this.location.lat !== "undefined" && typeof this.location.lng !== "undefined") {
+    // If legacy lat/lng present, create coordinates
+    const lat = parseFloat(this.location.lat);
+    const lng = parseFloat(this.location.lng);
+    if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+      this.location.type = "Point";
+      this.location.coordinates = [lng, lat];
+    }
+  }
+
+  next();
+});
 
 module.exports = mongoose.model("Point", pointSchema);

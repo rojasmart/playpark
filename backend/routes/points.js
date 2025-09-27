@@ -135,7 +135,7 @@ router.post("/", upload.array("images", 5), handleUploadError, async (req, res) 
       const updateData = {
         name,
         description,
-        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
         tags,
         "appData.lastSyncWithOSM": new Date(),
       };
@@ -150,7 +150,7 @@ router.post("/", upload.array("images", 5), handleUploadError, async (req, res) 
       point = new Point({
         name,
         description,
-        location: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        location: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
         tags,
         appData: {
           images: images,

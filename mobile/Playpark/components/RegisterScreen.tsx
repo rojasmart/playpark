@@ -22,22 +22,28 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  const amenities = [
-    'Escorrega',
-    'Escorrega 2 pisos',
-    'Baloiços',
-    'Balancé',
-    'Rede',
-    'Rede Arborismo',
-    'Slider',
-    'Música',
-    'Coberto',
-    'Acessível Cadeira Rodas',
-    'Sombra c/árvores',
-    'Bebedouro',
-    'Bancos',
-    'Iluminação nocturna',
-  ];
+  const filterCategories = {
+    Equipamentos: [
+      'Escorrega',
+      'Escorrega 2 pisos',
+      'Baloiços',
+      'Balancé',
+      'Rede',
+      'Rede Arborismo',
+      'Slider',
+      'Música',
+    ],
+    Comodidades: [
+      'Coberto',
+      'Acessível Cadeira Rodas',
+      'Sombra c/árvores',
+      'Bebedouro',
+      'Bancos',
+    ],
+    'Faixa Etária': ['0-2 anos', '2-5 anos', '5-12 anos', '12+ anos'],
+    Superfície: ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'],
+    Tema: ['Aventura', 'Natureza', 'Desporto', 'Inclusivo', 'Tradicional'],
+  };
 
   const toggleAmenity = (amenity: string) => {
     if (selectedAmenities.includes(amenity)) {
@@ -154,33 +160,35 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
           />
         </View>
 
-        {/* Comodidades */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comodidades</Text>
-          <View style={styles.amenitiesGrid}>
-            {amenities.map(amenity => (
-              <TouchableOpacity
-                key={amenity}
-                style={[
-                  styles.amenityChip,
-                  selectedAmenities.includes(amenity) &&
-                    styles.amenityChipSelected,
-                ]}
-                onPress={() => toggleAmenity(amenity)}
-              >
-                <Text
+        {/* Comodidades por Categoria */}
+        {Object.entries(filterCategories).map(([category, items]) => (
+          <View key={category} style={styles.section}>
+            <Text style={styles.sectionTitle}>{category}</Text>
+            <View style={styles.amenitiesGrid}>
+              {items.map((item: string) => (
+                <TouchableOpacity
+                  key={item}
                   style={[
-                    styles.amenityText,
-                    selectedAmenities.includes(amenity) &&
-                      styles.amenityTextSelected,
+                    styles.amenityChip,
+                    selectedAmenities.includes(item) &&
+                      styles.amenityChipSelected,
                   ]}
+                  onPress={() => toggleAmenity(item)}
                 >
-                  {amenity}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.amenityText,
+                      selectedAmenities.includes(item) &&
+                        styles.amenityTextSelected,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

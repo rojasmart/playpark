@@ -12,14 +12,10 @@ import {
   useColorScheme,
   View,
   Text,
-  FlatList,
-  RefreshControl,
   TouchableOpacity,
-  ActivityIndicator,
   Image,
   Linking,
   Platform,
-  TextInput,
   ScrollView,
   Modal,
   Dimensions,
@@ -206,75 +202,119 @@ function AppContent() {
       try {
         console.log('Saving playground:', playgroundData);
 
-        // Mapear dados do RegisterScreen para formato do backend
-        const backendData = {
-          name: playgroundData.name,
-          description: playgroundData.description,
-          lat: playgroundData.latitude,
-          lng: playgroundData.longitude,
-          // Comodidades mapeadas diretamente (formato que o backend espera)
-          surface: playgroundData.amenities
-            .find((a: string) =>
-              ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'].includes(a),
-            )
-            ?.toLowerCase(),
-          wheelchair: playgroundData.amenities.includes(
-            'Acessível Cadeira Rodas',
-          )
-            ? 'yes'
-            : 'no',
-          covered: playgroundData.amenities.includes('Coberto') ? 'yes' : 'no',
-          bench: playgroundData.amenities.includes('Bancos') ? 'yes' : 'no',
-          drinking_water: playgroundData.amenities.includes('Bebedouro')
-            ? 'yes'
-            : 'no',
-          playground_slide:
-            playgroundData.amenities.includes('Escorrega') ||
-            playgroundData.amenities.includes('Escorrega 2 pisos')
-              ? 'yes'
-              : 'no',
-          playground_swing: playgroundData.amenities.includes('Baloiços')
-            ? 'yes'
-            : 'no',
-          playground_climbingframe:
-            playgroundData.amenities.includes('Rede') ||
-            playgroundData.amenities.includes('Rede Arborismo')
-              ? 'yes'
-              : 'no',
-          theme: playgroundData.amenities
-            .find((a: string) =>
-              [
-                'Aventura',
-                'Natureza',
-                'Desporto',
-                'Inclusivo',
-                'Tradicional',
-              ].includes(a),
-            )
-            ?.toLowerCase(),
-          min_age: playgroundData.amenities.includes('0-2 anos')
-            ? '0'
-            : playgroundData.amenities.includes('2-5 anos')
-            ? '2'
-            : playgroundData.amenities.includes('5-12 anos')
-            ? '5'
-            : undefined,
-          max_age: playgroundData.amenities.includes('0-2 anos')
-            ? '2'
-            : playgroundData.amenities.includes('2-5 anos')
-            ? '5'
-            : playgroundData.amenities.includes('5-12 anos')
-            ? '12'
-            : playgroundData.amenities.includes('12+ anos')
-            ? '99'
-            : undefined,
-          userId: 'mobile-app-user',
-        };
+        // Construir FormData para enviar imagens via multipart/form-data
+        const form = new FormData();
 
+        // Campos textuais
+        form.append('name', playgroundData.name || '');
+        form.append('description', playgroundData.description || '');
+        // Enviar lat/lng também (compatibilidade com backend)
+        if (typeof playgroundData.latitude !== 'undefined') {
+          form.append('lat', String(playgroundData.latitude));
+        }
+        if (typeof playgroundData.longitude !== 'undefined') {
+          form.append('lng', String(playgroundData.longitude));
+        }
+
+        // Adicionar comodidades/tags
+        const surface = playgroundData.amenities
+          .find((a: string) =>
+            ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'].includes(a),
+          )
+          ?.toLowerCase();
+        if (surface) form.append('surface', surface);
+        form.append(
+          'wheelchair',
+          playgroundData.amenities.includes('Acessível Cadeira Rodas')
+            ? 'yes'
+            : 'no',
+        );
+        form.append(
+          'covered',
+          playgroundData.amenities.includes('Coberto') ? 'yes' : 'no',
+        );
+        form.append(
+          'bench',
+          playgroundData.amenities.includes('Bancos') ? 'yes' : 'no',
+        );
+        form.append(
+          'drinking_water',
+          playgroundData.amenities.includes('Bebedouro') ? 'yes' : 'no',
+        );
+        form.append(
+          'playground_slide',
+          playgroundData.amenities.includes('Escorrega') ||
+            playgroundData.amenities.includes('Escorrega 2 pisos')
+            ? 'yes'
+            : 'no',
+        );
+        form.append(
+          'playground_swing',
+          playgroundData.amenities.includes('Baloiços') ? 'yes' : 'no',
+        );
+        form.append(
+          'playground_climbingframe',
+          playgroundData.amenities.includes('Rede') ||
+            playgroundData.amenities.includes('Rede Arborismo')
+            ? 'yes'
+            : 'no',
+        );
+
+        const theme = playgroundData.amenities
+          .find((a: string) =>
+            [
+              'Aventura',
+              'Natureza',
+              'Desporto',
+              'Inclusivo',
+              'Tradicional',
+            ].includes(a),
+          )
+          ?.toLowerCase();
+        if (theme) form.append('theme', theme);
+
+        // idade mínima/máxima
+        if (playgroundData.amenities.includes('0-2 anos')) {
+          form.append('min_age', '0');
+          form.append('max_age', '2');
+        } else if (playgroundData.amenities.includes('2-5 anos')) {
+          form.append('min_age', '2');
+          form.append('max_age', '5');
+        } else if (playgroundData.amenities.includes('5-12 anos')) {
+          form.append('min_age', '5');
+          form.append('max_age', '12');
+        } else if (playgroundData.amenities.includes('12+ anos')) {
+          form.append('min_age', '12');
+          form.append('max_age', '99');
+        }
+
+        form.append('userId', 'mobile-app-user');
+
+        // Anexar imagens (campo 'images' esperado pelo backend multer)
+        const photos = playgroundData.photos || [];
+        photos.forEach((uri: string, idx: number) => {
+          // garantir prefixo file:// para Android local files
+          let fileUri = uri;
+          if (
+            !fileUri.startsWith('file://') &&
+            !fileUri.startsWith('content://') &&
+            !fileUri.startsWith('http')
+          ) {
+            fileUri = `file://${fileUri}`;
+          }
+          const filename = fileUri.split('/').pop() || `photo_${idx}.jpg`;
+          const match = /\.([0-9a-z]+)(?:[?#]|$)/i.exec(filename);
+          const ext = match ? match[1].toLowerCase() : 'jpg';
+          const type = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+          // @ts-ignore - RN FormData file object
+          form.append('images', { uri: fileUri, name: filename, type });
+        });
+
+        // Não setar manualmente 'Content-Type' — fetch definirá boundary
         const response = await fetch(`${host}/api/points`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(backendData),
+          body: form,
         });
 
         if (response.ok) {
@@ -295,57 +335,6 @@ function AppContent() {
     },
     [host, fetchPlaygrounds],
   );
-
-  function renderItem({ item }: { item: Playground }) {
-    const title =
-      item.name ||
-      item.tags?.name ||
-      item.tags?.['operator'] ||
-      `Playground ${item.id}`;
-    const addr = item.tags?.['addr:street'] || item.tags?.['addr:full'] || '';
-    const photo =
-      (item.images && item.images[0]) ||
-      item.tags?.image ||
-      item.tags?.photo ||
-      null;
-
-    return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => {
-          setSelectedPlayground(item);
-          setShowDrawer(true);
-        }}
-      >
-        {photo ? (
-          <Image source={{ uri: photo }} style={styles.photo} />
-        ) : (
-          <View style={styles.photoPlaceholder}>
-            <Text style={styles.photoPlaceholderText}>📍</Text>
-          </View>
-        )}
-        <View style={styles.cardContent}>
-          <Text style={styles.cardTitle}>{title}</Text>
-          {addr ? <Text style={styles.cardAddr}>{addr}</Text> : null}
-          <View style={styles.row}>
-            <TouchableOpacity
-              onPress={e => {
-                e.stopPropagation();
-                // open in map app
-                const url = Platform.select({
-                  ios: `maps:0,0?q=${item.lat},${item.lon}`,
-                  android: `geo:${item.lat},${item.lon}?q=${item.lat},${item.lon}`,
-                });
-                if (url) Linking.openURL(url);
-              }}
-            >
-              <Text style={styles.link}>Open in maps</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  }
 
   return (
     <View style={[styles.container, { paddingTop: safeAreaInsets.top }]}>
@@ -472,7 +461,9 @@ function AppContent() {
                   />
                 ) : (
                   <View style={styles.drawerPhotoPlaceholder}>
-                    <Text>📍 Sem foto disponível</Text>
+                    <Text style={styles.photoPlaceholderText}>
+                      📍 Sem foto disponível
+                    </Text>
                   </View>
                 )}
               </View>

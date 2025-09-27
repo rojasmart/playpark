@@ -9,7 +9,15 @@ import {
   TextInput,
   Image,
   Alert,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
+import {
+  launchImageLibrary,
+  launchCamera,
+  ImagePickerResponse,
+  MediaType,
+} from 'react-native-image-picker';
 
 interface RegisterScreenProps {
   onBack: () => void;
@@ -56,12 +64,82 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
     }
   };
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Permissão da Câmera',
+            message: 'Esta app precisa de acesso à câmera para tirar fotos',
+            buttonNeutral: 'Perguntar Mais Tarde',
+            buttonNegative: 'Cancelar',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleAddPhoto = () => {
-    // TODO: Implementar seleção de fotos da galeria ou câmera
-    Alert.alert(
-      'Funcionalidade',
-      'Seleção de fotos será implementada em breve',
-    );
+    Alert.alert('Selecionar Foto', 'Escolha uma opção', [
+      { text: 'Câmera', onPress: () => openCamera() },
+      { text: 'Galeria', onPress: () => openGallery() },
+      { text: 'Cancelar', style: 'cancel' },
+    ]);
+  };
+
+  const openCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert('Erro', 'Permissão da câmera necessária');
+      return;
+    }
+
+    const options = {
+      mediaType: 'photo' as MediaType,
+      quality: 0.8 as const,
+      maxWidth: 1200,
+      maxHeight: 1200,
+    };
+
+    launchCamera(options, (response: ImagePickerResponse) => {
+      if (response.assets && response.assets[0]) {
+        const imageUri = response.assets[0].uri;
+        if (imageUri) {
+          setPhotos([...photos, imageUri]);
+        }
+      }
+    });
+  };
+
+  const openGallery = () => {
+    const options = {
+      mediaType: 'photo' as MediaType,
+      quality: 0.8 as const,
+      maxWidth: 1200,
+      maxHeight: 1200,
+      selectionLimit: 5, // Máximo 5 fotos
+    };
+
+    launchImageLibrary(options, (response: ImagePickerResponse) => {
+      if (response.assets) {
+        const newPhotos = response.assets
+          .map(asset => asset.uri)
+          .filter(uri => uri !== undefined) as string[];
+        setPhotos([...photos, ...newPhotos]);
+      }
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index);
+    setPhotos(newPhotos);
   };
 
   const handleSave = () => {
@@ -191,11 +269,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
           {photos.length > 0 && (
             <View style={styles.photosContainer}>
               {photos.map((photo, index) => (
-                <Image
-                  key={index}
-                  source={{ uri: photo }}
-                  style={styles.photoPreview}
-                />
+                <View key={index} style={styles.photoContainer}>
+                  <Image source={{ uri: photo }} style={styles.photoPreview} />
+                  <TouchableOpacity
+                    style={styles.removePhotoButton}
+                    onPress={() => removePhoto(index)}
+                  >
+                    <Text style={styles.removePhotoText}>×</Text>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
@@ -352,6 +434,26 @@ const styles = StyleSheet.create({
   },
   coordinateInput: {
     flex: 1,
+  },
+  photoContainer: {
+    position: 'relative',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removePhotoText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    lineHeight: 14,
   },
 });
 

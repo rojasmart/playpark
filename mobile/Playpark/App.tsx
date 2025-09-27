@@ -23,6 +23,7 @@ import {
   ScrollView,
   Modal,
   Dimensions,
+  Alert,
 } from 'react-native';
 import {
   SafeAreaProvider,
@@ -31,6 +32,7 @@ import {
 //import MapView, { Marker } from 'react-native-maps';
 import Map from './components/Map';
 import FilterScreen from './components/FilterScreen';
+import RegisterScreen from './components/RegisterScreen';
 import Filter from 'react-native-vector-icons/MaterialIcons';
 
 type Playground = {
@@ -69,6 +71,7 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [showFilterScreen, setShowFilterScreen] = useState(false);
+  const [showRegisterScreen, setShowRegisterScreen] = useState(false);
   const [showDrawerMenu, setShowDrawerMenu] = useState(false);
   const [selectedPlayground, setSelectedPlayground] =
     useState<Playground | null>(null);
@@ -188,14 +191,38 @@ function AppContent() {
   }, [host, filters, searchQuery]);
 
   useEffect(() => {
-    // don't auto-fetch to avoid surprising network calls; user taps button.
-  }, []);
+    // Auto-fetch playgrounds when app starts
+    fetchPlaygrounds();
+  }, [fetchPlaygrounds]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchPlaygrounds();
     setRefreshing(false);
   }, [fetchPlaygrounds]);
+
+  const handleSavePlayground = useCallback(
+    async (playgroundData: any) => {
+      try {
+        console.log('Saving playground:', playgroundData);
+        // TODO: Implementar chamada à API para salvar o parque
+        // const response = await fetch(`${host}/api/playgrounds`, {
+        //   method: 'POST',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify(playgroundData),
+        // });
+        // if (response.ok) {
+        //   // Refresh playgrounds after saving
+        //   await fetchPlaygrounds();
+        // }
+        Alert.alert('Sucesso', 'Parque registado com sucesso!');
+      } catch (error) {
+        console.error('Error saving playground:', error);
+        Alert.alert('Erro', 'Falha ao registar o parque');
+      }
+    },
+    [host],
+  );
 
   function renderItem({ item }: { item: Playground }) {
     const title =
@@ -278,8 +305,16 @@ function AppContent() {
         />
       )}
 
+      {/* Register Screen */}
+      {showRegisterScreen && (
+        <RegisterScreen
+          onBack={() => setShowRegisterScreen(false)}
+          onSave={handleSavePlayground}
+        />
+      )}
+
       {/* Map with playgrounds and floating search */}
-      {!showFilterScreen && (
+      {!showFilterScreen && !showRegisterScreen && (
         <View style={styles.mapContainer}>
           <Map
             playgrounds={playgrounds}
@@ -293,10 +328,10 @@ function AppContent() {
           />
 
           <TouchableOpacity
-            style={styles.loadButton}
-            onPress={fetchPlaygrounds}
+            style={styles.registerButton}
+            onPress={() => setShowRegisterScreen(true)}
           >
-            <Text style={styles.loadButtonText}>Carregar Parques</Text>
+            <Text style={styles.registerButtonText}>Registar Parque</Text>
           </TouchableOpacity>
 
           {/* Bottom Search Bar */}
@@ -504,16 +539,16 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginBottom: 12,
   },
-  loadButton: {
+  registerButton: {
     position: 'absolute',
     top: 10,
     right: 10,
-    backgroundColor: '#0ea5ff',
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
-  loadButtonText: {
+  registerButtonText: {
     color: '#fff',
     fontWeight: '600',
   },

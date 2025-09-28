@@ -5,7 +5,12 @@
  * @format
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+// minimal ambient declarations for geolocation fallbacks
+declare const global: any;
+declare const navigator: any;
+// use community geolocation for reliable native behavior
+import Geolocation from '@react-native-community/geolocation';
 import {
   StatusBar,
   StyleSheet,
@@ -72,6 +77,15 @@ function AppContent() {
   const [selectedPlayground, setSelectedPlayground] =
     useState<Playground | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const mapRef = useRef<any>(null);
+  const [registerInitialCoords, setRegisterInitialCoords] = useState<{
+    lat?: number;
+    lon?: number;
+  } | null>(null);
 
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
@@ -188,7 +202,26 @@ function AppContent() {
 
   useEffect(() => {
     // Auto-fetch playgrounds when app starts
-    fetchPlaygrounds();
+    // try to obtain device location for centering and recenter button
+    const tryLocation = async () => {
+      try {
+        Geolocation.getCurrentPosition(
+          (pos: any) => {
+            setUserLocation({
+              lat: pos.coords.latitude,
+              lon: pos.coords.longitude,
+            });
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
+        );
+      } catch (e) {
+        // ignore
+      }
+      fetchPlaygrounds();
+    };
+
+    tryLocation();
   }, [fetchPlaygrounds]);
 
   const onRefresh = useCallback(async () => {
@@ -378,11 +411,22 @@ function AppContent() {
       {!showFilterScreen && !showRegisterScreen && (
         <View style={styles.mapContainer}>
           <Map
+            ref={mapRef}
             playgrounds={playgrounds}
+            initialCenter={userLocation || { lat: 38.7223, lon: -9.1393 }}
+            initialZoom={15}
+            onBoundsChange={bbox => {
+              // forwarded to earlier handler if needed
+              console.log('Bounds changed', bbox);
+            }}
+            onMapTap={coords => {
+              console.log('Map tapped at', coords);
+              // open register and prefill coords
+              setRegisterInitialCoords(coords);
+              setShowRegisterScreen(true);
+            }}
             onMarkerPress={(p: Playground) => {
               console.log('Marker pressed:', p);
-              console.log('Marker name field:', p.name);
-              console.log('Marker id field:', p.id);
               setSelectedPlayground(p);
               setShowDrawer(true);
             }}
@@ -394,6 +438,20 @@ function AppContent() {
           >
             <Text style={styles.registerButtonText}>Registar Parque</Text>
           </TouchableOpacity>
+
+          {/* Recenter floating icon button (bottom-left) */}
+          {userLocation && (
+            <TouchableOpacity
+              style={styles.recenterButton}
+              onPress={() => {
+                if (mapRef.current?.recenter) {
+                  mapRef.current.recenter(userLocation.lat, userLocation.lon, 15);
+                }
+              }}
+            >
+              <Filter name="my-location" size={22} color="#fff" />
+            </TouchableOpacity>
+          )}
 
           {/* Bottom Search Bar */}
           <View style={styles.bottomSearch}>
@@ -781,6 +839,19 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     fontSize: 16,
     color: '#999',
+  },
+  recenterButton: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#0ea5ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    zIndex: 1010,
   },
 });
 

@@ -12,6 +12,11 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Minimal ambient for geolocation available on RN environments
+declare const navigator: any;
+// prefer community geolocation for native permission behavior
+import Geolocation from '@react-native-community/geolocation';
 import {
   launchImageLibrary,
   launchCamera,
@@ -22,9 +27,14 @@ import {
 interface RegisterScreenProps {
   onBack: () => void;
   onSave: (playgroundData: any) => void;
+  initialCoords?: { lat?: number; lon?: number } | null;
 }
 
-const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
+const RegisterScreen: React.FC<RegisterScreenProps> = ({
+  onBack,
+  onSave,
+  initialCoords,
+}) => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [latitude, setLatitude] = useState('');
@@ -94,6 +104,16 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
     ]);
   };
 
+  // Prefill coordinates when initialCoords is provided
+  React.useEffect(() => {
+    if (initialCoords) {
+      if (typeof initialCoords.lat === 'number')
+        setLatitude(String(initialCoords.lat));
+      if (typeof initialCoords.lon === 'number')
+        setLongitude(String(initialCoords.lon));
+    }
+  }, [initialCoords]);
+
   const openCamera = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
@@ -135,6 +155,56 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
         setPhotos([...photos, ...newPhotos]);
       }
     });
+  };
+
+  const handleUseMyLocation = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Permissão de Localização',
+            message:
+              'A app precisa da sua localização para preencher as coordenadas',
+            buttonNeutral: 'Perguntar Mais Tarde',
+            buttonNegative: 'Cancelar',
+            buttonPositive: 'OK',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Permissão negada',
+            'Não foi possível obter a sua localização',
+          );
+          return;
+        }
+      }
+
+      try {
+        Geolocation.getCurrentPosition(
+          (pos: any) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            setLatitude(String(lat));
+            setLongitude(String(lon));
+            Alert.alert(
+              'Localização obtida',
+              `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`,
+            );
+          },
+          (err: any) => {
+            console.warn('Geolocation error', err);
+            Alert.alert('Erro', err?.message || 'Falha ao obter localização');
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 },
+        );
+      } catch (e) {
+        console.warn('UseMyLocation error', e);
+        Alert.alert('Erro', 'Falha ao obter localização');
+      }
+    } catch (e) {
+      console.warn('UseMyLocation error', e);
+      Alert.alert('Erro', 'Falha ao obter localização');
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -241,6 +311,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onBack, onSave }) => {
               onChangeText={setLongitude}
               keyboardType="numeric"
             />
+          </View>
+          <View style={styles.useLocationRow}>
+            <TouchableOpacity
+              style={styles.useLocationButton}
+              onPress={handleUseMyLocation}
+            >
+              <Text style={styles.useLocationText}>Usar minha localização</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -434,6 +512,20 @@ const styles = StyleSheet.create({
   },
   coordinateInput: {
     flex: 1,
+  },
+  useLocationRow: {
+    marginTop: 10,
+    alignItems: 'flex-start',
+  },
+  useLocationButton: {
+    backgroundColor: '#0ea5ff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  useLocationText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   photoContainer: {
     position: 'relative',

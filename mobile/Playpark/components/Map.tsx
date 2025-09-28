@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -17,18 +17,36 @@ type Playground = {
 type Props = {
   playgrounds?: Playground[];
   onMarkerPress?: (p: Playground) => void;
+  initialCenter?: { lat: number; lon: number };
+  initialZoom?: number;
+  onBoundsChange?: (bbox: {
+    minLat: number;
+    minLon: number;
+    maxLat: number;
+    maxLon: number;
+  }) => void;
+  onMapTap?: (coords: { lat: number; lon: number }) => void;
 };
 
-export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
+function MobileMap(
+  {
+    playgrounds = [],
+    onMarkerPress,
+    initialCenter,
+    initialZoom = 13,
+    onBoundsChange,
+    onMapTap,
+  }: Props,
+  ref: any,
+) {
   const webviewRef = useRef<any>(null);
-
-  console.log('MobileMap rendering with playgrounds:', playgrounds.length);
-  console.log('Sample playground:', playgrounds[0]);
 
   const html = useMemo(() => {
     const pg = JSON.stringify(playgrounds || []);
-
-    console.log('HTML playgrounds data:', pg);
+    const center = JSON.stringify(
+      initialCenter || { lat: 38.7223, lon: -9.1393 },
+    );
+    const zoom = initialZoom || 13;
 
     return `<!doctype html>
     <html>
@@ -44,11 +62,11 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
       if (typeof L === 'undefined') {
        console.error('WebView: Leaflet not loaded - check internet connection');
          document.body.innerHTML = '<div style="padding:20px;text-align:center;color:red;">Erro: Leaflet não carregou. Verifique conexão à internet.</div>';
-       } else {
-         console.log('WebView: Leaflet loaded successfully');
        }
         const playgrounds = ${pg};
-        const map = L.map('map').setView([38.7223, -9.1393], 13);
+        const initCenter = ${center};
+        const initZoom = ${zoom};
+        const map = L.map('map').setView([initCenter.lat, initCenter.lon], initZoom);
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
         function send(msg) {
           if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
@@ -61,16 +79,44 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
             const lon = parseFloat(p.lon);
             if (!isNaN(lat) && !isNaN(lon)) {
               const m = L.marker([lat, lon]).addTo(map);
-             const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
+              const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
               m.bindPopup(title);
               m.on('click', function() { send({ type: 'markerPress', index: idx, payload: p }); });
             }
           } catch(e) { /* ignore malformed items */ }
         });
+
+        // Map click -> send coords
+        map.on('click', function(e) { try { send({ type: 'mapTap', payload: { lat: e.latlng.lat, lon: e.latlng.lng } }); } catch(e){} });
+
+        function postBounds() {
+          try {
+            const b = map.getBounds();
+            send({ type: 'bounds', payload: { minLat: b.getSouth(), minLon: b.getWest(), maxLat: b.getNorth(), maxLon: b.getEast() } });
+          } catch(e) { }
+        }
+
+        postBounds();
+        let boundsTimeout;
+        map.on('moveend', function() { if (boundsTimeout) clearTimeout(boundsTimeout); boundsTimeout = setTimeout(postBounds, 200); });
+
+        // expose recenter helper for RN
+        window.__rn_recenter = function(lat, lon, z) { try { map.setView([lat, lon], z || initZoom); } catch(e){} };
       </script>
     </body>
     </html>`;
-  }, [playgrounds]);
+  }, [playgrounds, initialCenter, initialZoom]);
+
+  useImperativeHandle(ref, () => ({
+    recenter: (lat: number, lon: number, zoom?: number) => {
+      try {
+        const js = `window.__rn_recenter(${lat}, ${lon}, ${
+          zoom || initialZoom
+        }); true;`;
+        webviewRef.current?.injectJavaScript(js);
+      } catch (e) {}
+    },
+  }));
 
   return (
     <View style={styles.container}>
@@ -82,9 +128,13 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
         onMessage={(event: any) => {
           try {
             const data = JSON.parse(event.nativeEvent.data);
-            if (data && data.type === 'markerPress') {
-              const p = data.payload;
-              onMarkerPress?.(p);
+            if (!data) return;
+            if (data.type === 'markerPress') {
+              onMarkerPress?.(data.payload);
+            } else if (data.type === 'bounds') {
+              onBoundsChange?.(data.payload);
+            } else if (data.type === 'mapTap') {
+              onMapTap?.(data.payload);
             }
           } catch (e) {
             // ignore
@@ -94,6 +144,8 @@ export default function MobileMap({ playgrounds = [], onMarkerPress }: Props) {
     </View>
   );
 }
+
+export default forwardRef(MobileMap);
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

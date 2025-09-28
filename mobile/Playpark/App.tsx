@@ -445,7 +445,11 @@ function AppContent() {
               style={styles.recenterButton}
               onPress={() => {
                 if (mapRef.current?.recenter) {
-                  mapRef.current.recenter(userLocation.lat, userLocation.lon, 15);
+                  mapRef.current.recenter(
+                    userLocation.lat,
+                    userLocation.lon,
+                    15,
+                  );
                 }
               }}
             >

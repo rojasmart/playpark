@@ -73,18 +73,42 @@ function MobileMap(
             window.ReactNativeWebView.postMessage(JSON.stringify(msg));
           }
         }
-        playgrounds.forEach((p, idx) => {
+        // Maintain markers array and only render those inside current bounds
+        const allPlaygrounds = playgrounds.map((p) => {
+          // normalize lat/lon to numbers
+          const lat = parseFloat(p.lat);
+          const lon = parseFloat(p.lon);
+          return Object.assign({}, p, { lat, lon });
+        }).filter(p => !isNaN(p.lat) && !isNaN(p.lon));
+
+        const markers = [];
+        function clearMarkers() {
+          for (let i = 0; i < markers.length; i++) {
+            try { map.removeLayer(markers[i]); } catch(e){}
+          }
+          markers.length = 0;
+        }
+
+        function addMarkerFor(p) {
+          const m = L.marker([p.lat, p.lon]).addTo(map);
+          const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
+          m.bindPopup(title);
+          m.on('click', function() { send({ type: 'markerPress', payload: p }); });
+          markers.push(m);
+        }
+
+        function updateMarkers() {
           try {
-            const lat = parseFloat(p.lat);
-            const lon = parseFloat(p.lon);
-            if (!isNaN(lat) && !isNaN(lon)) {
-              const m = L.marker([lat, lon]).addTo(map);
-              const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
-              m.bindPopup(title);
-              m.on('click', function() { send({ type: 'markerPress', index: idx, payload: p }); });
+            const b = map.getBounds();
+            clearMarkers();
+            for (let i = 0; i < allPlaygrounds.length; i++) {
+              const p = allPlaygrounds[i];
+              if (b.contains([p.lat, p.lon])) {
+                addMarkerFor(p);
+              }
             }
-          } catch(e) { /* ignore malformed items */ }
-        });
+          } catch(e) { /* ignore */ }
+        }
 
         // Map click -> send coords
         map.on('click', function(e) { try { send({ type: 'mapTap', payload: { lat: e.latlng.lat, lon: e.latlng.lng } }); } catch(e){} });
@@ -96,9 +120,11 @@ function MobileMap(
           } catch(e) { }
         }
 
-        postBounds();
-        let boundsTimeout;
-        map.on('moveend', function() { if (boundsTimeout) clearTimeout(boundsTimeout); boundsTimeout = setTimeout(postBounds, 200); });
+  // initial marker render and bounds post
+  updateMarkers();
+  postBounds();
+  let boundsTimeout;
+  map.on('moveend', function() { if (boundsTimeout) clearTimeout(boundsTimeout); boundsTimeout = setTimeout(function(){ postBounds(); updateMarkers(); }, 200); });
 
         // expose recenter helper for RN
         window.__rn_recenter = function(lat, lon, z) { try { map.setView([lat, lon], z || initZoom); } catch(e){} };

@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   TextInput,
   Image,
   Alert,
   Platform,
   PermissionsAndroid,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   launchImageLibrary,
   launchCamera,

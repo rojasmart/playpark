@@ -567,34 +567,111 @@ function AppContent() {
                   'Sem descrição disponível'}
               </Text>
               <View style={styles.amenitiesGrid}>
-                <Text style={styles.amenitiesTitle}>Comodidades:</Text>
-                {selectedPlayground.tags &&
-                  Object.keys(selectedPlayground.tags).map(key => {
-                    const val = selectedPlayground.tags?.[key];
-                    if (!val) return null;
-                    // filter common playground tags
-                    if (
-                      key.startsWith('playground:') ||
-                      [
-                        'bench',
-                        'covered',
-                        'drinking_water',
-                        'wheelchair',
-                        'natural_shade',
-                        'lit',
-                      ].includes(key)
-                    ) {
-                      const label = key
-                        .replace('playground:', '')
-                        .replace(/_/g, ' ');
-                      return (
-                        <Text key={key} style={styles.amenityItem}>
-                          • {label} {val === 'yes' ? '' : `(${val})`}
-                        </Text>
-                      );
-                    }
-                    return null;
-                  })}
+                <Text style={styles.amenitiesTitle}>
+                  Equipamentos e Comodidades
+                </Text>
+                <View style={styles.amenityChipsContainer}>
+                  {/* Amenities with 'yes' values */}
+                  {selectedPlayground.tags &&
+                    Object.keys(selectedPlayground.tags)
+                      .filter(key => {
+                        const val = selectedPlayground.tags?.[key];
+                        // Only show amenities that are available (value = 'yes')
+                        return (
+                          val === 'yes' &&
+                          (key.startsWith('playground:') ||
+                            [
+                              'bench',
+                              'covered',
+                              'drinking_water',
+                              'wheelchair',
+                              'natural_shade',
+                              'lit',
+                            ].includes(key))
+                        );
+                      })
+                      .map(key => {
+                        // Map keys to friendly Portuguese labels
+                        const labelMap: Record<string, string> = {
+                          bench: 'Bancos',
+                          covered: 'Coberto',
+                          drinking_water: 'Bebedouro',
+                          wheelchair: 'Acessível',
+                          natural_shade: 'Sombra Natural',
+                          lit: 'Iluminado',
+                          'playground:slide': 'Escorrega',
+                          'playground:swing': 'Baloiços',
+                          'playground:climbingframe': 'Rede',
+                          'playground:climbing_net': 'Rede Arborismo',
+                          'playground:seesaw': 'Balancé',
+                          'playground:slider': 'Slider',
+                          'playground:music': 'Música',
+                          'playground:slide:double_deck': 'Escorrega 2 Pisos',
+                        };
+
+                        const label =
+                          labelMap[key] ||
+                          key
+                            .replace('playground:', '')
+                            .replace(/_/g, ' ')
+                            .split(' ')
+                            .map(
+                              word =>
+                                word.charAt(0).toUpperCase() + word.slice(1),
+                            )
+                            .join(' ');
+
+                        return (
+                          <View key={key} style={styles.amenityChip}>
+                            <Text style={styles.amenityChipText}>{label}</Text>
+                          </View>
+                        );
+                      })}
+
+                  {/* Add surface type if present */}
+                  {selectedPlayground.tags?.surface && (
+                    <View
+                      style={[
+                        styles.amenityChip,
+                        { backgroundColor: '#06b6d4' },
+                      ]}
+                    >
+                      <Text style={styles.amenityChipText}>
+                        Surface: {selectedPlayground.tags.surface}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Add theme if present */}
+                  {selectedPlayground.tags?.['playground:theme'] && (
+                    <View
+                      style={[
+                        styles.amenityChip,
+                        { backgroundColor: '#8b5cf6' },
+                      ]}
+                    >
+                      <Text style={styles.amenityChipText}>
+                        Theme: {selectedPlayground.tags['playground:theme']}
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* Add age range if present */}
+                  {(selectedPlayground.tags?.min_age ||
+                    selectedPlayground.tags?.max_age) && (
+                    <View
+                      style={[
+                        styles.amenityChip,
+                        { backgroundColor: '#f59e0b' },
+                      ]}
+                    >
+                      <Text style={styles.amenityChipText}>
+                        {selectedPlayground.tags.min_age || '?'}-
+                        {selectedPlayground.tags.max_age || '?'} anos
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
             </ScrollView>
           </View>
@@ -809,6 +886,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 8,
     color: '#374151',
+  },
+  amenityChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  amenityChip: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  amenityChipText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   amenityItem: {
     fontSize: 14,

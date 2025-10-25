@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     padding: 16,
     paddingTop: 24,
-    minHeight: 80,
+    minHeight: 100,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     marginRight: 16,
-    lineHeight: 24,
+    lineHeight: 26,
   },
   closeButton: {
     fontSize: 24,

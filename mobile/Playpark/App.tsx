@@ -86,6 +86,7 @@ function AppContent() {
     lat?: number;
     lon?: number;
   } | null>(null);
+  const hasRecenteredRef = useRef(false);
 
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
@@ -98,18 +99,27 @@ function AppContent() {
       setLoading(true);
       console.log('Fetching playgrounds...');
 
+      // Use user location if available, otherwise default to Lisbon center
+      const centerLat = userLocation?.lat || 38.7223;
+      const centerLon = userLocation?.lon || -9.1393;
+
+      console.log('Fetching playgrounds near:', {
+        lat: centerLat,
+        lon: centerLon,
+      });
+
       const params = new URLSearchParams({
-        lat: '38.7223',
-        lon: '-9.1393',
+        lat: String(centerLat),
+        lon: String(centerLon),
         radius: '10000',
         ...filters,
       });
 
       if (searchQuery) params.append('search', searchQuery);
 
-      // Construct Overpass QL query (same logic as frontend route)
+      // Construct Overpass QL query using actual location
       let overpassQuery = `[out:json][timeout:25];
-        node(around:10000,38.7223,-9.1393)["leisure"="playground"];
+        node(around:10000,${centerLat},${centerLon})["leisure"="playground"];
         out body;`;
 
       // Fetch OSM data directly from Overpass API
@@ -198,7 +208,7 @@ function AppContent() {
     } finally {
       setLoading(false);
     }
-  }, [host, filters, searchQuery]);
+  }, [host, filters, searchQuery, userLocation]);
 
   useEffect(() => {
     // Auto-fetch playgrounds when app starts
@@ -207,22 +217,44 @@ function AppContent() {
       try {
         Geolocation.getCurrentPosition(
           (pos: any) => {
-            setUserLocation({
+            const newLocation = {
               lat: pos.coords.latitude,
               lon: pos.coords.longitude,
-            });
+            };
+            console.log('Got user location:', newLocation);
+            setUserLocation(newLocation);
           },
-          () => {},
+          (error: any) => {
+            console.warn('Geolocation error:', error);
+            // Fetch playgrounds with default location if geolocation fails
+            fetchPlaygrounds();
+          },
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
         );
       } catch (e) {
-        // ignore
+        console.warn('Geolocation exception:', e);
+        // Fetch playgrounds with default location if exception
+        fetchPlaygrounds();
       }
-      fetchPlaygrounds();
     };
 
     tryLocation();
-  }, [fetchPlaygrounds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Recenter map when user location is first obtained
+  useEffect(() => {
+    if (userLocation && !hasRecenteredRef.current) {
+      hasRecenteredRef.current = true;
+      console.log('Recentering map to user location:', userLocation);
+      if (mapRef.current?.recenter) {
+        mapRef.current.recenter(userLocation.lat, userLocation.lon, 15);
+      }
+      // Fetch playgrounds for the new location
+      fetchPlaygrounds();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLocation]); // Don't include fetchPlaygrounds to avoid loop
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -478,7 +510,7 @@ function AppContent() {
                 <Text style={styles.drawerTitle}>
                   {selectedPlayground.name ||
                     selectedPlayground.tags?.name ||
-                    `Parque ${selectedPlayground.id}`}
+                    `Parques ${selectedPlayground.id}`}
                 </Text>
                 {selectedPlayground.rating && selectedPlayground.rating > 0 && (
                   <View style={styles.ratingContainer}>

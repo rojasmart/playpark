@@ -556,6 +556,12 @@ export default function AddPlaygroundPage() {
                 wheelchair: "Acessível Cadeira Rodas",
                 bench: "Bancos",
                 lighting: "Iluminação Nocturna",
+                public_wc: "WC Público",
+                picnic_area: "Zona Piquenique",
+                barbecue: "Churrasqueira",
+                dog_park: "Parque Canino",
+                parking: "Estacionamento",
+                kiosk: "Quiosque",
               }).map(([key, label]) => (
                 <label key={key} className="flex items-center space-x-2 cursor-pointer group">
                   <input

@@ -52,6 +52,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({
       'Rede',
       'Rede Arborismo',
       'Slider',
+      'Estrutura',
       'Música',
     ],
     Comodidades: [
@@ -60,10 +61,29 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({
       'Sombra c/árvores',
       'Bebedouro',
       'Bancos',
+      'Iluminação',
+      'WC Público',
+      'Zona Piquenique',
+      'Churrasqueira',
+      'Parque Canino',
+      'Estacionamento',
+      'Quiosque',
     ],
     'Faixa Etária': ['0-2 anos', '2-5 anos', '5-12 anos', '12+ anos'],
     Superfície: ['Relva', 'Areia', 'Borracha', 'Alcatrão', 'Terra'],
-    Tema: ['Aventura', 'Natureza', 'Desporto', 'Inclusivo', 'Tradicional'],
+    Tema: [
+      'Aventura',
+      'Natureza',
+      'Desporto',
+      'Inclusivo',
+      'Música',
+      'Avião',
+      'Comboio',
+      'Barco',
+      'Castelo',
+      'Espaço',
+      'Tradicional',
+    ],
   };
 
   const toggleAmenity = (amenity: string) => {

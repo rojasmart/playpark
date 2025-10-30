@@ -87,6 +87,12 @@ function AppContent() {
     lon?: number;
   } | null>(null);
   const hasRecenteredRef = useRef(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lon: number }>({
+    lat: 38.7223,
+    lon: -9.1393,
+  });
+  const [mapZoom, setMapZoom] = useState<number>(15);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
@@ -94,121 +100,267 @@ function AppContent() {
       ? 'http://10.0.2.2:5000'
       : 'http://localhost:5000';
 
-  const fetchPlaygrounds = useCallback(async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching playgrounds...');
+  const fetchPlaygrounds = useCallback(
+    async (mapCenter?: { lat: number; lon: number }, mapZoom?: number) => {
+      try {
+        setLoading(true);
+        console.log('Fetching playgrounds...');
 
-      // Use user location if available, otherwise default to Lisbon center
-      const centerLat = userLocation?.lat || 38.7223;
-      const centerLon = userLocation?.lon || -9.1393;
+        // Use provided map center or user location or default to Lisbon center
+        const centerLat = mapCenter?.lat || userLocation?.lat || 38.7223;
+        const centerLon = mapCenter?.lon || userLocation?.lon || -9.1393;
+        const zoomLevel = mapZoom || 15;
 
-      console.log('Fetching playgrounds near:', {
-        lat: centerLat,
-        lon: centerLon,
-      });
+        // Calculate radius based on zoom level - more generous to ensure we get all parks
+        // Higher zoom = smaller radius (more zoomed in)
+        // Lower zoom = larger radius (more zoomed out)
+        const calculateRadius = (zoom: number): number => {
+          // Use a more generous radius calculation to ensure we catch all parks
+          // Base calculation for meters per pixel at equator
+          const metersPerPixel =
+            (156543.03392 * Math.cos((centerLat * Math.PI) / 180)) /
+            Math.pow(2, zoom);
 
-      const params = new URLSearchParams({
-        lat: String(centerLat),
-        lon: String(centerLon),
-        radius: '10000',
-        ...filters,
-      });
+          // Assume viewport is roughly 400x400 pixels, so diagonal is ~566 pixels
+          // Add 50% buffer to ensure we get parks just outside viewport
+          const viewportRadius = (metersPerPixel * 566 * 1.5) / 2;
 
-      if (searchQuery) params.append('search', searchQuery);
+          // Ensure minimum 1km and maximum 100km
+          return Math.max(Math.min(viewportRadius, 100000), 1000);
+        };
 
-      // Construct Overpass QL query using actual location
-      let overpassQuery = `[out:json][timeout:25];
-        node(around:10000,${centerLat},${centerLon})["leisure"="playground"];
-        out body;`;
+        const radius = calculateRadius(zoomLevel);
 
-      // Fetch OSM data directly from Overpass API
-      const overpassRes = await fetch(
-        'https://overpass-api.de/api/interpreter',
-        {
-          method: 'POST',
-          body: overpassQuery,
-        },
-      );
-
-      // Fetch your backend points
-      const backendUrl = `${host}/api/points?${params}`;
-      console.log('Fetching Backend URL:', backendUrl);
-
-      const [overpassData, backendData] = await Promise.all([
-        overpassRes.json(),
-        fetch(backendUrl)
-          .then(res => (res.ok ? res.json() : []))
-          .catch(() => []),
-      ]);
-
-      console.log('Overpass Response status:', overpassRes.status);
-      console.log('Overpass data:', overpassData);
-      console.log('Backend data:', backendData);
-
-      // Normalize OSM data (elements array from Overpass)
-      const osmPlaygrounds = (overpassData.elements || []).map(
-        (element: any) => ({
-          id: `osm_${element.id}`,
-          lat: element.lat,
-          lon: element.lon,
-          tags: element.tags || {},
-          source: 'osm',
-          images: element.tags?.image ? [element.tags.image] : [],
-          description: element.tags?.description || element.tags?.name || '',
-        }),
-      );
-
-      // Normalize backend data
-      const backendPlaygrounds = (
-        Array.isArray(backendData) ? backendData : []
-      ).map((item: any) => ({
-        id: `backend_${item._id}`,
-        lat: item.location?.coordinates?.[1] || 0, // GeoJSON format: [lon, lat]
-        lon: item.location?.coordinates?.[0] || 0,
-        tags: item.tags || {},
-        source: 'backend',
-        images: item.appData?.images?.map((img: any) => img.url) || [],
-        description: item.description || '',
-        name: item.name,
-        rating: item.appData?.rating?.average || 0,
-        ratingCount: item.appData?.rating?.count || 0,
-      }));
-
-      // Debug backend items specifically
-      console.log('Backend playgrounds processed:', backendPlaygrounds);
-      backendPlaygrounds.forEach((bg, idx) => {
-        console.log(`Backend item ${idx}:`, {
-          id: bg.id,
-          name: bg.name,
-          images: bg.images,
-          lat: bg.lat,
-          lon: bg.lon,
+        console.log('Fetching playgrounds near:', {
+          lat: centerLat,
+          lon: centerLon,
+          zoom: zoomLevel,
+          radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
         });
-      });
 
-      // Debug OSM items too
-      console.log('OSM playgrounds processed:', osmPlaygrounds);
-      osmPlaygrounds.forEach((osm: any, idx: number) => {
-        console.log(`OSM item ${idx}:`, {
-          id: osm.id,
-          name: osm.tags?.name,
-          images: osm.images,
+        const params = new URLSearchParams({
+          lat: String(centerLat),
+          lon: String(centerLon),
+          radius: String(Math.round(radius)),
+          ...filters,
         });
-      });
 
-      // Merge OSM + backend data
-      const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
+        if (searchQuery) params.append('search', searchQuery);
 
-      console.log('Final merged playgrounds:', allPlaygrounds);
-      setPlaygrounds(allPlaygrounds);
-    } catch (err) {
-      console.warn('Fetch error', err);
-      setPlaygrounds([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [host, filters, searchQuery, userLocation]);
+        // Construct Overpass QL query using dynamic radius - include both nodes and ways
+        let overpassQuery = `[out:json][timeout:30];
+        (
+          node(around:${Math.round(
+            radius,
+          )},${centerLat},${centerLon})["leisure"="playground"];
+          way(around:${Math.round(
+            radius,
+          )},${centerLat},${centerLon})["leisure"="playground"];
+          rel(around:${Math.round(
+            radius,
+          )},${centerLat},${centerLon})["leisure"="playground"];
+        );
+        out center body;`;
+
+        console.log('=== OVERPASS QUERY ===');
+        console.log('Query:', overpassQuery);
+        console.log('Search params:', {
+          center: `${centerLat}, ${centerLon}`,
+          radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
+          zoom: zoomLevel,
+        });
+
+        // Fetch OSM data directly from Overpass API
+        const overpassRes = await fetch(
+          'https://overpass-api.de/api/interpreter',
+          {
+            method: 'POST',
+            body: overpassQuery,
+          },
+        );
+
+        // Fetch your backend points
+        const backendUrl = `${host}/api/points?${params}`;
+        console.log('=== BACKEND REQUEST ===');
+        console.log('Backend URL:', backendUrl);
+        console.log('Backend params:', Object.fromEntries(params));
+
+        const [overpassData, backendData] = await Promise.all([
+          overpassRes.json().catch(err => {
+            console.error('Overpass JSON parse error:', err);
+            return { elements: [] };
+          }),
+          fetch(backendUrl)
+            .then(res => {
+              console.log('Backend response status:', res.status);
+              if (!res.ok) {
+                console.error('Backend response not ok:', res.statusText);
+                return [];
+              }
+              return res.json();
+            })
+            .catch(err => {
+              console.error('Backend fetch error:', err);
+              return [];
+            }),
+        ]);
+
+        console.log('Overpass Response status:', overpassRes.status);
+        console.log(
+          'Overpass data elements found:',
+          overpassData.elements?.length || 0,
+        );
+        console.log(
+          'Backend data found:',
+          Array.isArray(backendData) ? backendData.length : 0,
+        );
+
+        // Log some sample data for debugging
+        if (overpassData.elements?.length > 0) {
+          console.log('Sample OSM playground:', overpassData.elements[0]);
+        }
+        if (Array.isArray(backendData) && backendData.length > 0) {
+          console.log('Sample backend playground:', backendData[0]);
+        }
+
+        // Normalize OSM data (elements array from Overpass)
+        const osmPlaygrounds = (overpassData.elements || [])
+          .map((element: any) => {
+            // Handle different OSM element types (node, way, relation)
+            let lat = element.lat;
+            let lon = element.lon;
+
+            // For ways and relations, use center coordinates if available
+            if (!lat || !lon) {
+              if (element.center) {
+                lat = element.center.lat;
+                lon = element.center.lon;
+              } else if (element.bounds) {
+                // Calculate center from bounds
+                lat = (element.bounds.minlat + element.bounds.maxlat) / 2;
+                lon = (element.bounds.minlon + element.bounds.maxlon) / 2;
+              }
+            }
+
+            const playground = {
+              id: `osm_${element.id}`,
+              lat: lat || 0,
+              lon: lon || 0,
+              tags: element.tags || {},
+              source: 'osm',
+              images: element.tags?.image ? [element.tags.image] : [],
+              description:
+                element.tags?.description || element.tags?.name || '',
+            };
+
+            // Log invalid coordinates for debugging
+            if (playground.lat === 0 || playground.lon === 0) {
+              console.warn('Invalid OSM playground coordinates:', {
+                id: element.id,
+                type: element.type,
+                hasCenter: !!element.center,
+                hasBounds: !!element.bounds,
+                originalLat: element.lat,
+                originalLon: element.lon,
+              });
+            }
+
+            return playground;
+          })
+          .filter(playground => {
+            const isValid = playground.lat !== 0 && playground.lon !== 0;
+            if (!isValid) {
+              console.warn(
+                'Filtering out invalid OSM playground:',
+                playground.id,
+              );
+            }
+            return isValid;
+          });
+
+        // Normalize backend data
+        const backendPlaygrounds = (
+          Array.isArray(backendData) ? backendData : []
+        )
+          .map((item: any) => {
+            const playground = {
+              id: `backend_${item._id}`,
+              lat: item.location?.coordinates?.[1] || 0, // GeoJSON format: [lon, lat]
+              lon: item.location?.coordinates?.[0] || 0,
+              tags: item.tags || {},
+              source: 'backend',
+              images: item.appData?.images?.map((img: any) => img.url) || [],
+              description: item.description || '',
+              name: item.name,
+              rating: item.appData?.rating?.average || 0,
+              ratingCount: item.appData?.rating?.count || 0,
+            };
+
+            // Log backend playground for debugging
+            if (playground.lat === 0 || playground.lon === 0) {
+              console.warn('Invalid backend playground coordinates:', {
+                id: item._id,
+                location: item.location,
+                coordinates: item.location?.coordinates,
+              });
+            }
+
+            return playground;
+          })
+          .filter(playground => {
+            const isValid = playground.lat !== 0 && playground.lon !== 0;
+            if (!isValid) {
+              console.warn(
+                'Filtering out invalid backend playground:',
+                playground.id,
+              );
+            }
+            return isValid;
+          });
+
+        // Merge OSM + backend data
+        const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
+
+        console.log('=== PLAYGROUND DATA SUMMARY ===');
+        console.log('OSM playgrounds found:', osmPlaygrounds.length);
+        console.log('Backend playgrounds found:', backendPlaygrounds.length);
+        console.log('Total merged playgrounds:', allPlaygrounds.length);
+
+        // Log coordinates range for debugging
+        if (allPlaygrounds.length > 0) {
+          const lats = allPlaygrounds.map(p => p.lat);
+          const lons = allPlaygrounds.map(p => p.lon);
+          console.log('Coordinate ranges:');
+          console.log(
+            '  Lat:',
+            Math.min(...lats).toFixed(4),
+            'to',
+            Math.max(...lats).toFixed(4),
+          );
+          console.log(
+            '  Lon:',
+            Math.min(...lons).toFixed(4),
+            'to',
+            Math.max(...lons).toFixed(4),
+          );
+          console.log(
+            '  Search center:',
+            centerLat.toFixed(4),
+            centerLon.toFixed(4),
+          );
+          console.log('  Search radius:', (radius / 1000).toFixed(1), 'km');
+        }
+
+        setPlaygrounds(allPlaygrounds);
+      } catch (err) {
+        console.warn('Fetch error', err);
+        setPlaygrounds([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [host, filters, searchQuery, userLocation],
+  );
 
   useEffect(() => {
     // Auto-fetch playgrounds when app starts
@@ -227,18 +379,25 @@ function AppContent() {
           (error: any) => {
             console.warn('Geolocation error:', error);
             // Fetch playgrounds with default location if geolocation fails
-            fetchPlaygrounds();
+            fetchPlaygrounds(mapCenter, mapZoom);
           },
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
         );
       } catch (e) {
         console.warn('Geolocation exception:', e);
         // Fetch playgrounds with default location if exception
-        fetchPlaygrounds();
+        fetchPlaygrounds(mapCenter, mapZoom);
       }
     };
 
     tryLocation();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
@@ -247,20 +406,31 @@ function AppContent() {
     if (userLocation && !hasRecenteredRef.current) {
       hasRecenteredRef.current = true;
       console.log('Recentering map to user location:', userLocation);
+      setMapCenter(userLocation);
       if (mapRef.current?.recenter) {
         mapRef.current.recenter(userLocation.lat, userLocation.lon, 15);
       }
-      // Fetch playgrounds for the new location
-      fetchPlaygrounds();
+      // Also fetch playgrounds for the new location immediately
+      fetchPlaygrounds(userLocation, 15);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]); // Don't include fetchPlaygrounds to avoid loop
 
+  // Initial fetch when map center/zoom changes (fallback)
+  useEffect(() => {
+    // Only fetch if we haven't fetched yet and have a valid center
+    if (playgrounds.length === 0 && mapCenter && !loading) {
+      console.log('Initial fetch for map center:', mapCenter, 'zoom:', mapZoom);
+      fetchPlaygrounds(mapCenter, mapZoom);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapCenter, mapZoom]); // Trigger when center or zoom changes
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchPlaygrounds();
+    await fetchPlaygrounds(mapCenter, mapZoom);
     setRefreshing(false);
-  }, [fetchPlaygrounds]);
+  }, [fetchPlaygrounds, mapCenter, mapZoom]);
 
   const handleSavePlayground = useCallback(
     async (playgroundData: any) => {
@@ -387,7 +557,7 @@ function AppContent() {
           console.log('Playground saved successfully:', savedPlayground);
           Alert.alert('Sucesso', 'Parque registado com sucesso!');
           // Refresh playgrounds after saving
-          await fetchPlaygrounds();
+          await fetchPlaygrounds(mapCenter, mapZoom);
         } else {
           const errorData = await response.json();
           console.error('API Error:', errorData);
@@ -447,9 +617,30 @@ function AppContent() {
             playgrounds={playgrounds}
             initialCenter={userLocation || { lat: 38.7223, lon: -9.1393 }}
             initialZoom={15}
-            onBoundsChange={bbox => {
-              // forwarded to earlier handler if needed
-              console.log('Bounds changed', bbox);
+            onBoundsChange={(bounds, zoom, center) => {
+              console.log('Bounds changed:', {
+                bounds,
+                zoom,
+                center,
+                boundsArea: bounds
+                  ? `${bounds.north}-${bounds.south}, ${bounds.east}-${bounds.west}`
+                  : 'N/A',
+              });
+              setMapCenter(center);
+              setMapZoom(zoom);
+
+              // Debounce the fetch to avoid too many API calls
+              if (fetchTimeoutRef.current) {
+                clearTimeout(fetchTimeoutRef.current);
+              }
+
+              fetchTimeoutRef.current = setTimeout(() => {
+                console.log('Triggering debounced fetch for:', {
+                  center,
+                  zoom,
+                });
+                fetchPlaygrounds(center, zoom);
+              }, 800); // Reduced from 1000ms to 800ms for better responsiveness
             }}
             onMapTap={coords => {
               console.log('Map tapped at', coords);

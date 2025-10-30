@@ -87,12 +87,11 @@ function AppContent() {
     lon?: number;
   } | null>(null);
   const hasRecenteredRef = useRef(false);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lon: number }>({
-    lat: 38.7223,
-    lon: -9.1393,
-  });
-  const [mapZoom, setMapZoom] = useState<number>(15);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasInitialFetchRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const lastFetchCenterRef = useRef<{ lat: number; lon: number } | null>(null);
+  const lastFetchZoomRef = useRef<number | null>(null);
 
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
@@ -101,32 +100,29 @@ function AppContent() {
       : 'http://localhost:5000';
 
   const fetchPlaygrounds = useCallback(
-    async (mapCenter?: { lat: number; lon: number }, mapZoom?: number) => {
+    async (center?: { lat: number; lon: number }, zoom?: number) => {
       try {
         setLoading(true);
         console.log('Fetching playgrounds...');
 
-        // Use provided map center or user location or default to Lisbon center
-        const centerLat = mapCenter?.lat || userLocation?.lat || 38.7223;
-        const centerLon = mapCenter?.lon || userLocation?.lon || -9.1393;
-        const zoomLevel = mapZoom || 15;
+        // Use provided center or default to Lisbon
+        const centerLat = center?.lat || 38.7223;
+        const centerLon = center?.lon || -9.1393;
+        const zoomLevel = zoom || 15;
 
-        // Calculate radius based on zoom level - more generous to ensure we get all parks
-        // Higher zoom = smaller radius (more zoomed in)
-        // Lower zoom = larger radius (more zoomed out)
-        const calculateRadius = (zoom: number): number => {
-          // Use a more generous radius calculation to ensure we catch all parks
-          // Base calculation for meters per pixel at equator
-          const metersPerPixel =
-            (156543.03392 * Math.cos((centerLat * Math.PI) / 180)) /
-            Math.pow(2, zoom);
+        // Calculate radius based on zoom level - same as frontend
+        const calculateRadius = (z: number): number => {
+          // Reduced radius to avoid Overpass API 504 timeouts
+          // Zoom levels: 13=~5km, 15=~2km, 17=~1km
+          const baseRadius =
+            (40075000 * Math.cos((centerLat * Math.PI) / 180)) /
+            Math.pow(2, z + 8);
 
-          // Assume viewport is roughly 400x400 pixels, so diagonal is ~566 pixels
-          // Add 50% buffer to ensure we get parks just outside viewport
-          const viewportRadius = (metersPerPixel * 566 * 1.5) / 2;
+          // Reduced multiplier from 2.5 to 1.5 for faster queries
+          const radius = baseRadius * 1.5;
 
-          // Ensure minimum 1km and maximum 100km
-          return Math.max(Math.min(viewportRadius, 100000), 1000);
+          // Maximum 20km to avoid timeouts, minimum 500m
+          return Math.max(Math.min(radius, 20000), 500);
         };
 
         const radius = calculateRadius(zoomLevel);
@@ -147,37 +143,89 @@ function AppContent() {
 
         if (searchQuery) params.append('search', searchQuery);
 
-        // Construct Overpass QL query using dynamic radius - include both nodes and ways
-        let overpassQuery = `[out:json][timeout:30];
-        (
-          node(around:${Math.round(
-            radius,
-          )},${centerLat},${centerLon})["leisure"="playground"];
-          way(around:${Math.round(
-            radius,
-          )},${centerLat},${centerLon})["leisure"="playground"];
-          rel(around:${Math.round(
-            radius,
-          )},${centerLat},${centerLon})["leisure"="playground"];
-        );
-        out center body;`;
+        // Construct Overpass QL query with reduced timeout and optimized query
+        // Use bbox (bounding box) instead of around for better performance
+        const latDelta = radius / 111320; // degrees latitude
+        const lonDelta =
+          radius / (111320 * Math.cos((centerLat * Math.PI) / 180)); // degrees longitude
+        const bbox = {
+          south: centerLat - latDelta,
+          west: centerLon - lonDelta,
+          north: centerLat + latDelta,
+          east: centerLon + lonDelta,
+        };
+
+        // Simplified query with shorter timeout and only nodes (faster)
+        let overpassQuery = `[out:json][timeout:15][bbox:${bbox.south},${bbox.west},${bbox.north},${bbox.east}];
+(
+  node["leisure"="playground"];
+);
+out body center;`;
 
         console.log('=== OVERPASS QUERY ===');
         console.log('Query:', overpassQuery);
         console.log('Search params:', {
           center: `${centerLat}, ${centerLon}`,
           radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
+          bbox: bbox,
           zoom: zoomLevel,
         });
 
-        // Fetch OSM data directly from Overpass API
-        const overpassRes = await fetch(
-          'https://overpass-api.de/api/interpreter',
-          {
+        // TEMPORARY: Disable Overpass API due to persistent 504 errors
+        // We'll rely on backend data only for now
+        console.warn(
+          '⚠️ Overpass API temporarily disabled - using backend data only',
+        );
+        let overpassData = { elements: [] };
+
+        // Alternative: Uncomment this section to re-enable Overpass API when stable
+        /*
+        // Fetch OSM data with timeout and error handling
+        const overpassController = new AbortController();
+        const overpassTimeout = setTimeout(
+          () => overpassController.abort(),
+          8000, // Reduced to 8 seconds
+        );
+
+        let overpassRes = null;
+        try {
+          overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
             method: 'POST',
             body: overpassQuery,
-          },
-        );
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            signal: overpassController.signal,
+          });
+          clearTimeout(overpassTimeout);
+        } catch (err: any) {
+          clearTimeout(overpassTimeout);
+          if (err.name === 'AbortError') {
+            console.warn(
+              'Overpass API timeout - continuing with backend data only',
+            );
+          } else {
+            console.error('Overpass API fetch error:', err);
+          }
+          overpassRes = null;
+        }
+
+        // Handle Overpass response
+        let overpassData = { elements: [] };
+        if (overpassRes && overpassRes.ok) {
+          try {
+            overpassData = await overpassRes.json();
+          } catch (err) {
+            console.error('Overpass JSON parse error:', err);
+          }
+        } else if (overpassRes) {
+          console.error(
+            'Overpass API error:',
+            overpassRes.status,
+            overpassRes.statusText,
+          );
+        }
+        */
 
         // Fetch your backend points
         const backendUrl = `${host}/api/points?${params}`;
@@ -185,27 +233,22 @@ function AppContent() {
         console.log('Backend URL:', backendUrl);
         console.log('Backend params:', Object.fromEntries(params));
 
-        const [overpassData, backendData] = await Promise.all([
-          overpassRes.json().catch(err => {
-            console.error('Overpass JSON parse error:', err);
-            return { elements: [] };
-          }),
-          fetch(backendUrl)
-            .then(res => {
-              console.log('Backend response status:', res.status);
-              if (!res.ok) {
-                console.error('Backend response not ok:', res.statusText);
-                return [];
-              }
-              return res.json();
-            })
-            .catch(err => {
-              console.error('Backend fetch error:', err);
+        // Fetch backend data
+        const backendData = await fetch(backendUrl)
+          .then(res => {
+            console.log('Backend response status:', res.status);
+            if (!res.ok) {
+              console.error('Backend response not ok:', res.statusText);
               return [];
-            }),
-        ]);
+            }
+            return res.json();
+          })
+          .catch(err => {
+            console.error('Backend fetch error:', err);
+            return [];
+          });
 
-        console.log('Overpass Response status:', overpassRes.status);
+        console.log('=== DATA SUMMARY ===');
         console.log(
           'Overpass data elements found:',
           overpassData.elements?.length || 0,
@@ -267,7 +310,7 @@ function AppContent() {
 
             return playground;
           })
-          .filter(playground => {
+          .filter((playground: Playground) => {
             const isValid = playground.lat !== 0 && playground.lon !== 0;
             if (!isValid) {
               console.warn(
@@ -307,7 +350,7 @@ function AppContent() {
 
             return playground;
           })
-          .filter(playground => {
+          .filter((playground: Playground) => {
             const isValid = playground.lat !== 0 && playground.lon !== 0;
             if (!isValid) {
               console.warn(
@@ -359,7 +402,7 @@ function AppContent() {
         setLoading(false);
       }
     },
-    [host, filters, searchQuery, userLocation],
+    [host, filters, searchQuery],
   );
 
   useEffect(() => {
@@ -379,14 +422,13 @@ function AppContent() {
           (error: any) => {
             console.warn('Geolocation error:', error);
             // Fetch playgrounds with default location if geolocation fails
-            fetchPlaygrounds(mapCenter, mapZoom);
+            // Will be triggered by map's onBoundsChange
           },
           { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
         );
       } catch (e) {
         console.warn('Geolocation exception:', e);
-        // Fetch playgrounds with default location if exception
-        fetchPlaygrounds(mapCenter, mapZoom);
+        // Will be triggered by map's onBoundsChange
       }
     };
 
@@ -406,31 +448,31 @@ function AppContent() {
     if (userLocation && !hasRecenteredRef.current) {
       hasRecenteredRef.current = true;
       console.log('Recentering map to user location:', userLocation);
-      setMapCenter(userLocation);
       if (mapRef.current?.recenter) {
         mapRef.current.recenter(userLocation.lat, userLocation.lon, 15);
       }
-      // Also fetch playgrounds for the new location immediately
-      fetchPlaygrounds(userLocation, 15);
+      // Fetch will be triggered by map's onBoundsChange
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLocation]); // Don't include fetchPlaygrounds to avoid loop
+  }, [userLocation]);
 
-  // Initial fetch when map center/zoom changes (fallback)
+  // Refetch when filters change
   useEffect(() => {
-    // Only fetch if we haven't fetched yet and have a valid center
-    if (playgrounds.length === 0 && mapCenter && !loading) {
-      console.log('Initial fetch for map center:', mapCenter, 'zoom:', mapZoom);
-      fetchPlaygrounds(mapCenter, mapZoom);
+    // Only refetch if we've had an initial fetch
+    if (hasInitialFetchRef.current) {
+      console.log('Filters changed, will refetch on next map interaction');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapCenter, mapZoom]); // Trigger when center or zoom changes
+  }, [filters]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchPlaygrounds(mapCenter, mapZoom);
+    // Will trigger via map's current position
+    if (mapRef.current) {
+      // Force a re-fetch by simulating a bounds change
+      console.log('Refresh triggered');
+    }
     setRefreshing(false);
-  }, [fetchPlaygrounds, mapCenter, mapZoom]);
+  }, []);
 
   const handleSavePlayground = useCallback(
     async (playgroundData: any) => {
@@ -556,8 +598,7 @@ function AppContent() {
           const savedPlayground = await response.json();
           console.log('Playground saved successfully:', savedPlayground);
           Alert.alert('Sucesso', 'Parque registado com sucesso!');
-          // Refresh playgrounds after saving
-          await fetchPlaygrounds(mapCenter, mapZoom);
+          // Refresh playgrounds - will be triggered by map
         } else {
           const errorData = await response.json();
           console.error('API Error:', errorData);
@@ -568,7 +609,7 @@ function AppContent() {
         Alert.alert('Erro', 'Falha ao conectar com o servidor');
       }
     },
-    [host, fetchPlaygrounds],
+    [host],
   );
 
   return (
@@ -626,8 +667,9 @@ function AppContent() {
                   ? `${bounds.north}-${bounds.south}, ${bounds.east}-${bounds.west}`
                   : 'N/A',
               });
-              setMapCenter(center);
-              setMapZoom(zoom);
+
+              // Mark that we've had an initial fetch
+              hasInitialFetchRef.current = true;
 
               // Debounce the fetch to avoid too many API calls
               if (fetchTimeoutRef.current) {
@@ -635,12 +677,53 @@ function AppContent() {
               }
 
               fetchTimeoutRef.current = setTimeout(() => {
-                console.log('Triggering debounced fetch for:', {
+                // Throttle: minimum 3 seconds between API calls to avoid 429 errors
+                const now = Date.now();
+                const timeSinceLastFetch = now - lastFetchTimeRef.current;
+
+                // Check if we should skip this fetch
+                if (timeSinceLastFetch < 3000) {
+                  console.log('Skipping fetch - too soon after last request:', {
+                    timeSinceLastFetch: `${timeSinceLastFetch}ms`,
+                    waitTime: `${3000 - timeSinceLastFetch}ms`,
+                  });
+                  return;
+                }
+
+                // Check if location/zoom changed significantly
+                const lastCenter = lastFetchCenterRef.current;
+                const lastZoom = lastFetchZoomRef.current;
+
+                if (lastCenter && lastZoom !== null) {
+                  // Calculate distance moved (rough approximation in degrees)
+                  const latDiff = Math.abs(center.lat - lastCenter.lat);
+                  const lonDiff = Math.abs(center.lon - lastCenter.lon);
+                  const zoomDiff = Math.abs(zoom - lastZoom);
+
+                  // Skip if movement is too small (less than ~500m at this scale)
+                  if (latDiff < 0.005 && lonDiff < 0.005 && zoomDiff < 1) {
+                    console.log('Skipping fetch - movement too small:', {
+                      latDiff,
+                      lonDiff,
+                      zoomDiff,
+                    });
+                    return;
+                  }
+                }
+
+                console.log('Triggering throttled fetch for:', {
                   center,
                   zoom,
+                  timeSinceLastFetch: `${timeSinceLastFetch}ms`,
                 });
+
+                // Update tracking refs
+                lastFetchTimeRef.current = now;
+                lastFetchCenterRef.current = center;
+                lastFetchZoomRef.current = zoom;
+
                 fetchPlaygrounds(center, zoom);
-              }, 800); // Reduced from 1000ms to 800ms for better responsiveness
+              }, 2000); // 2 seconds debounce (increased from 500ms)
             }}
             onMapTap={coords => {
               console.log('Map tapped at', coords);

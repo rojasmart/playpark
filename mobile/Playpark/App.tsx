@@ -472,7 +472,7 @@ function AppContent() {
           </TouchableOpacity>
 
           {/* Recenter floating icon button (bottom-left) */}
-          {userLocation && (
+          {userLocation ? (
             <TouchableOpacity
               style={styles.recenterButton}
               onPress={() => {
@@ -487,7 +487,7 @@ function AppContent() {
             >
               <Filter name="my-location" size={22} color="#fff" />
             </TouchableOpacity>
-          )}
+          ) : null}
 
           {/* Bottom Search Bar */}
           <View style={styles.bottomSearch}>
@@ -512,16 +512,17 @@ function AppContent() {
                     selectedPlayground.tags?.name ||
                     `Parques ${selectedPlayground.id}`}
                 </Text>
-                {selectedPlayground.rating && selectedPlayground.rating > 0 && (
+                {selectedPlayground.rating && selectedPlayground.rating > 0 ? (
                   <View style={styles.ratingContainer}>
                     <Text style={styles.ratingText}>
                       {'⭐'.repeat(Math.round(selectedPlayground.rating))}
                       {selectedPlayground.rating.toFixed(1)}
-                      {selectedPlayground.ratingCount &&
-                        ` (${selectedPlayground.ratingCount})`}
+                      {selectedPlayground.ratingCount
+                        ? ` (${selectedPlayground.ratingCount})`
+                        : ''}
                     </Text>
                   </View>
-                )}
+                ) : null}
               </View>
               <TouchableOpacity onPress={() => setShowDrawer(false)}>
                 <Text style={styles.closeButton}>✕</Text>
@@ -572,64 +573,67 @@ function AppContent() {
                 </Text>
                 <View style={styles.amenityChipsContainer}>
                   {/* Amenities with 'yes' values */}
-                  {selectedPlayground.tags &&
-                    Object.keys(selectedPlayground.tags)
-                      .filter(key => {
-                        const val = selectedPlayground.tags?.[key];
-                        // Only show amenities that are available (value = 'yes')
-                        return (
-                          val === 'yes' &&
-                          (key.startsWith('playground:') ||
-                            [
-                              'bench',
-                              'covered',
-                              'drinking_water',
-                              'wheelchair',
-                              'natural_shade',
-                              'lit',
-                            ].includes(key))
-                        );
-                      })
-                      .map(key => {
-                        // Map keys to friendly Portuguese labels
-                        const labelMap: Record<string, string> = {
-                          bench: 'Bancos',
-                          covered: 'Coberto',
-                          drinking_water: 'Bebedouro',
-                          wheelchair: 'Acessível',
-                          natural_shade: 'Sombra Natural',
-                          lit: 'Iluminado',
-                          'playground:slide': 'Escorrega',
-                          'playground:swing': 'Baloiços',
-                          'playground:climbingframe': 'Rede',
-                          'playground:climbing_net': 'Rede Arborismo',
-                          'playground:seesaw': 'Balancé',
-                          'playground:slider': 'Slider',
-                          'playground:music': 'Música',
-                          'playground:slide:double_deck': 'Escorrega 2 Pisos',
-                        };
+                  {selectedPlayground.tags
+                    ? Object.keys(selectedPlayground.tags)
+                        .filter(key => {
+                          const val = selectedPlayground.tags?.[key];
+                          // Only show amenities that are available (value = 'yes')
+                          return (
+                            val === 'yes' &&
+                            (key.startsWith('playground:') ||
+                              [
+                                'bench',
+                                'covered',
+                                'drinking_water',
+                                'wheelchair',
+                                'natural_shade',
+                                'lit',
+                              ].includes(key))
+                          );
+                        })
+                        .map(key => {
+                          // Map keys to friendly Portuguese labels
+                          const labelMap: Record<string, string> = {
+                            bench: 'Bancos',
+                            covered: 'Coberto',
+                            drinking_water: 'Bebedouro',
+                            wheelchair: 'Acessível',
+                            natural_shade: 'Sombra Natural',
+                            lit: 'Iluminado',
+                            'playground:slide': 'Escorrega',
+                            'playground:swing': 'Baloiços',
+                            'playground:climbingframe': 'Rede',
+                            'playground:climbing_net': 'Rede Arborismo',
+                            'playground:seesaw': 'Balancé',
+                            'playground:slider': 'Slider',
+                            'playground:music': 'Música',
+                            'playground:slide:double_deck': 'Escorrega 2 Pisos',
+                          };
 
-                        const label =
-                          labelMap[key] ||
-                          key
-                            .replace('playground:', '')
-                            .replace(/_/g, ' ')
-                            .split(' ')
-                            .map(
-                              word =>
-                                word.charAt(0).toUpperCase() + word.slice(1),
-                            )
-                            .join(' ');
+                          const label =
+                            labelMap[key] ||
+                            key
+                              .replace('playground:', '')
+                              .replace(/_/g, ' ')
+                              .split(' ')
+                              .map(
+                                word =>
+                                  word.charAt(0).toUpperCase() + word.slice(1),
+                              )
+                              .join(' ');
 
-                        return (
-                          <View key={key} style={styles.amenityChip}>
-                            <Text style={styles.amenityChipText}>{label}</Text>
-                          </View>
-                        );
-                      })}
+                          return (
+                            <View key={key} style={styles.amenityChip}>
+                              <Text style={styles.amenityChipText}>
+                                {label}
+                              </Text>
+                            </View>
+                          );
+                        })
+                    : null}
 
                   {/* Add surface type if present */}
-                  {selectedPlayground.tags?.surface && (
+                  {selectedPlayground.tags?.surface ? (
                     <View
                       style={[
                         styles.amenityChip,
@@ -640,10 +644,10 @@ function AppContent() {
                         Surface: {selectedPlayground.tags.surface}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
 
                   {/* Add theme if present */}
-                  {selectedPlayground.tags?.['playground:theme'] && (
+                  {selectedPlayground.tags?.['playground:theme'] ? (
                     <View
                       style={[
                         styles.amenityChip,
@@ -654,11 +658,11 @@ function AppContent() {
                         Theme: {selectedPlayground.tags['playground:theme']}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
 
                   {/* Add age range if present */}
-                  {(selectedPlayground.tags?.min_age ||
-                    selectedPlayground.tags?.max_age) && (
+                  {selectedPlayground.tags?.min_age ||
+                  selectedPlayground.tags?.max_age ? (
                     <View
                       style={[
                         styles.amenityChip,
@@ -670,7 +674,7 @@ function AppContent() {
                         {selectedPlayground.tags.max_age || '?'} anos
                       </Text>
                     </View>
-                  )}
+                  ) : null}
                 </View>
               </View>
             </ScrollView>

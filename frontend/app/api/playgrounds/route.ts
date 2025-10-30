@@ -35,10 +35,14 @@ export async function GET(req: NextRequest) {
   // Rating filter
   const rating = searchParams.get("rating") || null;
 
-  // Construct Overpass QL query
-  let overpassQuery = `[out:json][timeout:25];
-    node(around:${radius},${lat},${lon})["leisure"="playground"];
-    out body;`;
+  // Construct Overpass QL query - include nodes, ways, and relations
+  let overpassQuery = `[out:json][timeout:30];
+    (
+      node(around:${radius},${lat},${lon})["leisure"="playground"];
+      way(around:${radius},${lat},${lon})["leisure"="playground"];
+      rel(around:${radius},${lat},${lon})["leisure"="playground"];
+    );
+    out center body;`;
 
   // Add filters if any
   let filters: string[] = [];
@@ -81,10 +85,18 @@ export async function GET(req: NextRequest) {
   }
 
   if (filters.length > 0) {
-    overpassQuery = `[out:json][timeout:25];
-      node(around:${radius},${lat},${lon})["leisure"="playground"]${filters.join("")};
-      out body;`;
+    const filterStr = filters.join("");
+    overpassQuery = `[out:json][timeout:30];
+      (
+        node(around:${radius},${lat},${lon})["leisure"="playground"]${filterStr};
+        way(around:${radius},${lat},${lon})["leisure"="playground"]${filterStr};
+        rel(around:${radius},${lat},${lon})["leisure"="playground"]${filterStr};
+      );
+      out center body;`;
   }
+
+  console.log('Overpass Query:', overpassQuery);
+  console.log('Search params:', { lat, lon, radius: `${radius}m (${(parseInt(radius)/1000).toFixed(1)}km)` });
 
   const response = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",

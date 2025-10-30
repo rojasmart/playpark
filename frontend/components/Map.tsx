@@ -21,7 +21,13 @@ const MapWithNoSSR = dynamic(() => import("./MapComponent"), {
   loading: () => <div className="h-80vh w-full flex items-center justify-center bg-gray-100">Carregando mapa...</div>,
 });
 
-export default function Map({ playgrounds }: { playgrounds: Playground[] }) {
+export default function Map({
+  playgrounds,
+  onBoundsChange,
+}: {
+  playgrounds: Playground[];
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }, zoom: number, center: { lat: number; lon: number }) => void;
+}) {
   // Normaliza os pontos para garantir lat/lon/lng numéricos e ids válidos
   const normalized = (playgrounds || [])
     .map((p) => {
@@ -43,5 +49,5 @@ export default function Map({ playgrounds }: { playgrounds: Playground[] }) {
     console.debug("Map incoming playgrounds:", normalized);
   }, [playgrounds]);
 
-  return <MapWithNoSSR playgrounds={normalized} />;
+  return <MapWithNoSSR playgrounds={normalized} onBoundsChange={onBoundsChange} />;
 }

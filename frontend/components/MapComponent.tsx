@@ -1,7 +1,7 @@
 "use client";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { X, Star, MapPin, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Playground {
@@ -16,7 +16,83 @@ interface Playground {
   images?: string[];
 }
 
-function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
+interface MapComponentProps {
+  playgrounds: Playground[];
+  onBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }, zoom: number, center: { lat: number; lon: number }) => void;
+}
+
+// Component to handle map events
+function MapEventsHandler({ onBoundsChange }: { onBoundsChange?: MapComponentProps["onBoundsChange"] }) {
+  const hasInitializedRef = useRef(false);
+
+  const map = useMapEvents({
+    moveend: () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+
+        onBoundsChange(
+          {
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+          },
+          zoom,
+          { lat: center.lat, lon: center.lng }
+        );
+      }
+    },
+    zoomend: () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds();
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+
+        onBoundsChange(
+          {
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            east: bounds.getEast(),
+            west: bounds.getWest(),
+          },
+          zoom,
+          { lat: center.lat, lon: center.lng }
+        );
+      }
+    },
+  });
+
+  // Trigger initial fetch only once
+  useEffect(() => {
+    if (!hasInitializedRef.current && onBoundsChange && map) {
+      hasInitializedRef.current = true;
+
+      const bounds = map.getBounds();
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      console.log("MapEventsHandler: Initial fetch trigger");
+      onBoundsChange(
+        {
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        },
+        zoom,
+        { lat: center.lat, lon: center.lng }
+      );
+    }
+    // Only run once - don't include onBoundsChange in deps to avoid loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+
+  return null;
+}
+
+function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
   const [selectedPlayground, setSelectedPlayground] = useState<Playground | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -137,6 +213,7 @@ function MapComponent({ playgrounds }: { playgrounds: Playground[] }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapEventsHandler onBoundsChange={onBoundsChange} />
         {playgrounds?.map((playground) => (
           <Marker
             key={playground.id}

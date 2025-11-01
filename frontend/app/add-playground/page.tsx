@@ -365,7 +365,7 @@ export default function AddPlaygroundPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: Parque Infantil da Alameda"
                 />
               </div>
@@ -377,7 +377,7 @@ export default function AddPlaygroundPage() {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: Alameda dos Oceanos, Lisboa"
                 />
               </div>
@@ -390,7 +390,7 @@ export default function AddPlaygroundPage() {
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Descreva o parque, suas características especiais, estado de conservação, etc."
               />
             </div>
@@ -490,11 +490,11 @@ export default function AddPlaygroundPage() {
                 <input
                   type="number"
                   name="latitude"
-                  value={formData.latitude || ""}
+                  value={formData.latitude ?? ""}
                   onChange={handleInputChange}
                   required
                   step="any"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: 38.736946"
                 />
               </div>
@@ -504,11 +504,11 @@ export default function AddPlaygroundPage() {
                 <input
                   type="number"
                   name="longitude"
-                  value={formData.longitude || ""}
+                  value={formData.longitude ?? ""}
                   onChange={handleInputChange}
                   required
                   step="any"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: -9.142685"
                 />
               </div>
@@ -588,7 +588,7 @@ export default function AddPlaygroundPage() {
                   name="surface"
                   value={formData.surface}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Selecione a superfície</option>
                   <option value="sand">Areia</option>
@@ -607,7 +607,7 @@ export default function AddPlaygroundPage() {
                   name="theme"
                   value={formData.theme}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Selecione o tema</option>
                   <option value="car">Carros</option>
@@ -629,7 +629,7 @@ export default function AddPlaygroundPage() {
                   name="min_age"
                   value={formData.min_age}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((age) => (
                     <option key={age} value={age}>
@@ -645,7 +645,7 @@ export default function AddPlaygroundPage() {
                   name="max_age"
                   value={formData.max_age}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((age) => (
                     <option key={age} value={age}>
@@ -683,7 +683,7 @@ export default function AddPlaygroundPage() {
                   name="opening_hours"
                   value={formData.opening_hours}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: 08:00-20:00 ou 24/7"
                 />
               </div>
@@ -695,7 +695,7 @@ export default function AddPlaygroundPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: +351 123 456 789"
                 />
               </div>
@@ -707,7 +707,7 @@ export default function AddPlaygroundPage() {
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Ex: https://www.exemplo.com"
                 />
               </div>

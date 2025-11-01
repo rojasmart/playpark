@@ -65,38 +65,6 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
       {/* All Filters - Expandable */}
       {isExpanded && (
         <div className="p-4 space-y-6">
-          {/* Search Radius */}
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Raio de Busca</h3>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Raio: {filters.radius || "5000"}m</span>
-                <span className="text-xs text-gray-500">({(parseInt(filters.radius || "5000") / 1000).toFixed(1)}km)</span>
-              </div>
-              <input
-                type="range"
-                name="radius"
-                min="500"
-                max="20000"
-                step="500"
-                value={filters.radius || "5000"}
-                onChange={handleRadiusChange}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
-                    ((parseInt(filters.radius || "5000") - 500) / (20000 - 500)) * 100
-                  }%, #e5e7eb ${((parseInt(filters.radius || "5000") - 500) / (20000 - 500)) * 100}%, #e5e7eb 100%)`,
-                }}
-              />
-              <div className="flex justify-between text-xs text-gray-400">
-                <span>0.5km</span>
-                <span>5km</span>
-                <span>10km</span>
-                <span>20km</span>
-              </div>
-            </div>
-          </div>
-
           {/* Equipment */}
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">Equipamentos</h3>

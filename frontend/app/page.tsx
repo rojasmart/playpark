@@ -192,8 +192,62 @@ export default function Home() {
           console.warn("Local points fetch failed:", resLocal.status);
         }
 
-        // 3) Mesclar (colocar locais primeiro para priorizar) e aplicar filtros de busca
-        const nodes = [...localNodes, ...osmNodes];
+        // 3) Mesclar (colocar locais primeiro para priorizar)
+        let nodes = [...localNodes, ...osmNodes];
+
+        // Helper copied from MapComponent to interpret tag truthiness
+        const isTruthyTag = (val: any) => {
+          if (val === true) return true;
+          if (typeof val === "string") {
+            const v = val.toLowerCase();
+            return v === "yes" || v === "true" || v === "1";
+          }
+          if (typeof val === "number") return val === 1;
+          return false;
+        };
+
+        // Apply UI filters (from FilterPanel) to the merged nodes list so both OSM and local points respect selections
+        const matchesFilters = (p: Playground) => {
+          // If no filters set, always match
+          if (!filters || Object.keys(filters).length === 0) return true;
+
+          // For each active filter key where value is non-empty, verify playground has tag matching truthy value
+          for (const [key, val] of Object.entries(filters)) {
+            if (!val || val === "") continue; // skip empty filters
+
+            // Special-case radius/min/max handled server-side — skip if key is lat/lon/radius
+            if (key === "lat" || key === "lon" || key === "radius") continue;
+
+            const desired = val.toLowerCase();
+
+            // For boolean equipment/facility filters we expect "yes" in UI
+            if (desired === "yes") {
+              // The playground tags may be in different shapes: tags object, appData.tags, or simple map
+              const tags = p.tags || {};
+
+              // Some local points store boolean flags in tags or in appData; try multiple key variants
+              const candidates = [
+                tags[key],
+                tags[key.replace(/:/g, "_")], // playground:slide -> playground_slide
+                tags[`${key}_yes`],
+                tags[`${key}_true`],
+                tags[`${key}_1`],
+              ];
+
+              const foundTruthy = candidates.some((c) => isTruthyTag(c));
+              if (!foundTruthy) return false;
+            } else {
+              // For non-boolean filters, do a direct string match if tag exists
+              const tags = p.tags || {};
+              if (!tags[key] || String(tags[key]).toLowerCase() !== desired) return false;
+            }
+          }
+
+          return true;
+        };
+
+        // Filter nodes using UI filters
+        nodes = nodes.filter(matchesFilters);
         console.log("=== PLAYGROUND SUMMARY ===");
         console.log("OSM nodes:", osmNodes.length);
         console.log("Local nodes:", localNodes.length);

@@ -171,61 +171,111 @@ out body center;`;
           zoom: zoomLevel,
         });
 
-        // TEMPORARY: Disable Overpass API due to persistent 504 errors
-        // We'll rely on backend data only for now
-        console.warn(
-          '⚠️ Overpass API temporarily disabled - using backend data only',
-        );
-        let overpassData = { elements: [] };
+        // Try multiple Overpass mirrors with timeouts; if full-bbox fails,
+        // subdivide bbox into tiles and query each tile, merging/deduping results.
+        const mirrors = [
+          'https://overpass-api.de/api/interpreter',
+          'https://overpass.openstreetmap.fr/api/interpreter',
+          'https://overpass.kumi.systems/api/interpreter',
+        ];
 
-        // Alternative: Uncomment this section to re-enable Overpass API when stable
-        /*
-        // Fetch OSM data with timeout and error handling
-        const overpassController = new AbortController();
-        const overpassTimeout = setTimeout(
-          () => overpassController.abort(),
-          8000, // Reduced to 8 seconds
-        );
+        async function fetchMirror(url: string, q: string, timeoutMs = 8000) {
+          const controller = new AbortController();
+          const t = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            const res = await fetch(url, {
+              method: 'POST',
+              body: q,
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              signal: controller.signal,
+            });
+            clearTimeout(t);
+            if (!res.ok) {
+              console.warn(`Overpass mirror ${url} returned ${res.status}`);
+              return null;
+            }
+            const data = await res.json().catch(err => {
+              console.warn('Overpass JSON parse error from', url, err);
+              return null;
+            });
+            return data;
+          } catch (err: any) {
+            clearTimeout(t);
+            if (err.name === 'AbortError') {
+              console.warn(
+                `Overpass mirror ${url} timed out after ${timeoutMs}ms`,
+              );
+            } else {
+              console.warn(
+                `Overpass mirror ${url} error:`,
+                err && err.message ? err.message : err,
+              );
+            }
+            return null;
+          }
+        }
 
-        let overpassRes = null;
-        try {
-          overpassRes = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: overpassQuery,
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            signal: overpassController.signal,
-          });
-          clearTimeout(overpassTimeout);
-        } catch (err: any) {
-          clearTimeout(overpassTimeout);
-          if (err.name === 'AbortError') {
-            console.warn(
-              'Overpass API timeout - continuing with backend data only',
+        // Try full bbox first
+        let overpassData: any = { elements: [] };
+        for (const m of mirrors) {
+          try {
+            const r = await fetchMirror(m, overpassQuery, 8000);
+            if (r && Array.isArray(r.elements)) {
+              console.log(
+                `Overpass: returning ${r.elements.length} elements from ${m}`,
+              );
+              overpassData = r;
+              break;
+            }
+          } catch (e) {
+            // continue
+          }
+        }
+
+        // If full bbox returned nothing, subdivide and try tiles
+        if (!overpassData.elements || overpassData.elements.length === 0) {
+          console.warn('Overpass full-bbox attempts failed; subdividing bbox');
+          const latMid = (bbox.south + bbox.north) / 2;
+          const lonMid = (bbox.west + bbox.east) / 2;
+          const tiles = [
+            { south: bbox.south, west: bbox.west, north: latMid, east: lonMid },
+            { south: bbox.south, west: lonMid, north: latMid, east: bbox.east },
+            { south: latMid, west: bbox.west, north: bbox.north, east: lonMid },
+            { south: latMid, west: lonMid, north: bbox.north, east: bbox.east },
+          ];
+
+          const merged: any[] = [];
+          const seen = new Set<string>();
+
+          for (const tile of tiles) {
+            const tileQuery = `[out:json][timeout:10][bbox:${tile.south},${tile.west},${tile.north},${tile.east}];\n(\n  node["leisure"="playground"];\n);\nout body center;`;
+            for (const m of mirrors) {
+              const r = await fetchMirror(m, tileQuery, 6000);
+              if (r && Array.isArray(r.elements) && r.elements.length > 0) {
+                for (const el of r.elements) {
+                  const key = `${el.type}_${el.id}`;
+                  if (!seen.has(key)) {
+                    seen.add(key);
+                    merged.push(el);
+                  }
+                }
+                break; // success for this tile
+              }
+            }
+          }
+
+          if (merged.length > 0) {
+            overpassData = { elements: merged };
+            console.log(
+              `Overpass subdivided returned ${merged.length} unique elements`,
             );
           } else {
-            console.error('Overpass API fetch error:', err);
+            console.warn(
+              'All Overpass attempts failed or returned no elements; falling back to backend only',
+            );
+            overpassData = { elements: [] };
           }
-          overpassRes = null;
         }
-
-        // Handle Overpass response
-        let overpassData = { elements: [] };
-        if (overpassRes && overpassRes.ok) {
-          try {
-            overpassData = await overpassRes.json();
-          } catch (err) {
-            console.error('Overpass JSON parse error:', err);
-          }
-        } else if (overpassRes) {
-          console.error(
-            'Overpass API error:',
-            overpassRes.status,
-            overpassRes.statusText,
-          );
-        }
-        */
 
         // Fetch your backend points
         const backendUrl = `${host}/api/points?${params}`;

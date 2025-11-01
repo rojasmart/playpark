@@ -111,34 +111,92 @@ out body center;`;
     radius: `${radius}m (${(parseInt(radius)/1000).toFixed(1)}km)`,
     bbox: bbox,
   });
+  // Attempt Overpass queries using multiple mirrors with timeouts.
+  // If the full-bbox query fails on all mirrors, subdivide the bbox and
+  // query tiles (merge/dedupe results).
+  const mirrors = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.openstreetmap.fr/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+  ];
 
-  // TEMPORARY: Disable Overpass API due to persistent 504 errors
-  console.warn('⚠️ Overpass API temporarily disabled - returning empty result');
-  return NextResponse.json({ elements: [] });
-
-  // Alternative: Uncomment this section to re-enable Overpass API when stable
-  /*
-  try {
-    const response = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: overpassQuery,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      signal: AbortSignal.timeout(12000), // 12 second timeout
-    });
-
-    if (!response.ok) {
-      console.error('Overpass API error:', response.status, response.statusText);
-      return NextResponse.json({ elements: [] });
+  async function fetchMirror(url: string, q: string, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const to = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        body: q,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        signal: controller.signal,
+      });
+      clearTimeout(to);
+      if (!res.ok) {
+        console.warn(`Overpass mirror ${url} returned ${res.status}`);
+        return null;
+      }
+      const data = await res.json().catch(err => {
+        console.warn('Overpass JSON parse error from', url, err);
+        return null;
+      });
+      return data;
+    } catch (err: any) {
+      clearTimeout(to);
+      if (err.name === 'AbortError') {
+        console.warn(`Overpass mirror ${url} timed out after ${timeoutMs}ms`);
+      } else {
+        console.warn(`Overpass mirror ${url} error:`, err && err.message ? err.message : err);
+      }
+      return null;
     }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Overpass API fetch error:', error.message || error);
-    // Return empty result on error instead of failing
-    return NextResponse.json({ elements: [] });
   }
-  */
+
+  // Try full bbox on each mirror
+  for (const m of mirrors) {
+    const result = await fetchMirror(m, overpassQuery, 10000);
+    if (result && Array.isArray(result.elements)) {
+      console.log(`Overpass: returning ${result.elements.length} elements from ${m}`);
+      return NextResponse.json(result);
+    }
+  }
+
+  // If full bbox failed, subdivide bbox into 4 tiles and query each tile
+  console.warn('⚠️ Full-bbox Overpass attempts failed; trying subdivided tiles');
+
+  const latMid = (bbox.south + bbox.north) / 2;
+  const lonMid = (bbox.west + bbox.east) / 2;
+  const tiles = [
+    { south: bbox.south, west: bbox.west, north: latMid, east: lonMid }, // SW
+    { south: bbox.south, west: lonMid, north: latMid, east: bbox.east }, // SE
+    { south: latMid, west: bbox.west, north: bbox.north, east: lonMid }, // NW
+    { south: latMid, west: lonMid, north: bbox.north, east: bbox.east }, // NE
+  ];
+
+  const merged: any[] = [];
+  const seen = new Set<string>();
+
+  for (const tile of tiles) {
+    const tileQuery = `[out:json][timeout:10][bbox:${tile.south},${tile.west},${tile.north},${tile.east}];\n(\n  node["leisure"="playground"];\n);\nout body center;`;
+    for (const m of mirrors) {
+      const r = await fetchMirror(m, tileQuery, 8000);
+      if (r && Array.isArray(r.elements) && r.elements.length > 0) {
+        for (const el of r.elements) {
+          const key = `${el.type}_${el.id}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(el);
+          }
+        }
+        break; // proceed to next tile after successful mirror
+      }
+    }
+  }
+
+  if (merged.length > 0) {
+    console.log(`Overpass subdivided queries returned ${merged.length} unique elements`);
+    return NextResponse.json({ elements: merged });
+  }
+
+  console.warn('⚠️ All Overpass attempts failed or returned no elements; returning empty elements[]');
+  return NextResponse.json({ elements: [] });
 }

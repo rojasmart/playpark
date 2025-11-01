@@ -412,12 +412,15 @@ out body center;`;
           });
 
         // Merge OSM + backend data
-        const allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
+        let allPlaygrounds = [...osmPlaygrounds, ...backendPlaygrounds];
 
         console.log('=== PLAYGROUND DATA SUMMARY ===');
         console.log('OSM playgrounds found:', osmPlaygrounds.length);
         console.log('Backend playgrounds found:', backendPlaygrounds.length);
-        console.log('Total merged playgrounds:', allPlaygrounds.length);
+        console.log(
+          'Total merged playgrounds (pre-filter):',
+          allPlaygrounds.length,
+        );
 
         // Log coordinates range for debugging
         if (allPlaygrounds.length > 0) {
@@ -444,7 +447,88 @@ out body center;`;
           console.log('  Search radius:', (radius / 1000).toFixed(1), 'km');
         }
 
-        setPlaygrounds(allPlaygrounds);
+        // Client-side filtering: ensure mobile UI filters (e.g., Escorrega) are applied
+        const isTruthyTag = (val: any) => {
+          if (val === true) return true;
+          if (typeof val === 'string') {
+            const v = val.toLowerCase();
+            return v === 'yes' || v === 'true' || v === '1';
+          }
+          if (typeof val === 'number') return val === 1;
+          return false;
+        };
+
+        const matchesFilters = (p: Playground) => {
+          if (!filters || Object.keys(filters).length === 0) return true;
+
+          // Iterate active filters
+          for (const [key, val] of Object.entries(filters)) {
+            if (!val) continue;
+
+            // Skip radius or location pseudo-filters handled server-side
+            if (
+              key === 'radius' ||
+              key === 'lat' ||
+              key === 'lon' ||
+              key === 'search'
+            )
+              continue;
+
+            // Handle rating filters like min_rating_3
+            if (key.startsWith('min_rating_')) {
+              const min = parseInt(key.replace('min_rating_', ''), 10);
+              if (!isNaN(min)) {
+                const rating = Number(p.rating || 0);
+                if (rating < min) return false;
+                continue;
+              }
+            }
+
+            // If UI requests 'yes', check that playground tags contain a truthy value for the filter
+            const desired = String(val).toLowerCase();
+            const tags = p.tags || {};
+
+            if (desired === 'yes') {
+              // Check multiple candidate keys to handle variant naming conventions
+              const candidates = [
+                key,
+                key.replace(/_/g, ':'),
+                key.replace(/:/g, '_'),
+                key.replace('2floor', 'double_deck'),
+                key.replace('slide_2floor', 'slide:double_deck'),
+                `playground:${key.split(':').pop()}`,
+                `playground_${key.split(':').pop()}`,
+              ];
+
+              let found = false;
+              for (const c of candidates) {
+                if (!c) continue;
+                const tv = tags[c];
+                if (isTruthyTag(tv)) {
+                  found = true;
+                  break;
+                }
+              }
+
+              if (!found) return false;
+            } else {
+              // Non-boolean filter: match exact tag value if present
+              const tagVal =
+                tags[key] ||
+                tags[key.replace(/_/g, ':')] ||
+                tags[key.replace(/:/g, '_')];
+              if (!tagVal || String(tagVal).toLowerCase() !== desired)
+                return false;
+            }
+          }
+
+          return true;
+        };
+
+        const filtered = allPlaygrounds.filter(matchesFilters);
+        console.log('Total merged playgrounds (post-filter):', filtered.length);
+
+        setPlaygrounds(filtered);
       } catch (err) {
         console.warn('Fetch error', err);
         setPlaygrounds([]);

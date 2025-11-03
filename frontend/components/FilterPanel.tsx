@@ -20,14 +20,6 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
     });
   };
 
-  const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFilters({
-      ...filters,
-      radius: value,
-    });
-  };
-
   const clearFilters = () => {
     setFilters({});
   };
@@ -40,10 +32,10 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
       <div className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+            <Filter className="w-5 h-5 text-red-700 " />
+            <h2 className="text-lg text-gray-500">Filtros</h2>
             {activeFiltersCount > 0 && (
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+              <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                 {activeFiltersCount} ativo{activeFiltersCount !== 1 ? "s" : ""}
               </span>
             )}
@@ -54,7 +46,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
                 Limpar tudo
               </button>
             )}
-            <button onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700">
+            <button onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-600">
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               {isExpanded ? "Esconder filtros" : "Mostrar filtros"}
             </button>

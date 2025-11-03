@@ -17,7 +17,7 @@ export default function FloatingInfoButton({ onShowInfo }: FloatingInfoButtonPro
   return (
     <button
       onClick={handleShowInfo}
-      className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 z-[1001] flex items-center justify-center group"
+      className="fixed bottom-6 right-6 w-12 h-12 bg-red-700 hover:bg-red-800 text-white rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-500 focus:ring-opacity-50 transition-all duration-200 z-[1001] flex items-center justify-center group"
       aria-label="Informações sobre o Playpark"
       title="Sobre"
     >

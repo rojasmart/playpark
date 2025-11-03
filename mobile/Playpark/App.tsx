@@ -100,7 +100,11 @@ function AppContent() {
       : 'http://localhost:5000';
 
   const fetchPlaygrounds = useCallback(
-    async (center?: { lat: number; lon: number }, zoom?: number) => {
+    async (
+      center?: { lat: number; lon: number },
+      zoom?: number,
+      bounds?: { north: number; south: number; east: number; west: number },
+    ) => {
       try {
         setLoading(true);
         console.log('Fetching playgrounds...');
@@ -125,7 +129,50 @@ function AppContent() {
           return Math.max(Math.min(radius, 20000), 500);
         };
 
-        const radius = calculateRadius(zoomLevel);
+        let radius = calculateRadius(zoomLevel);
+
+        // If bounds are provided, compute a more accurate radius that covers the viewport
+        const haversine = (
+          lat1: number,
+          lon1: number,
+          lat2: number,
+          lon2: number,
+        ) => {
+          const toRad = (deg: number) => (deg * Math.PI) / 180;
+          const R = 6371000; // Earth radius in meters
+          const dLat = toRad(lat2 - lat1);
+          const dLon = toRad(lon2 - lon1);
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) *
+              Math.cos(toRad(lat2)) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        };
+
+        if (bounds) {
+          // compute distance from center to each corner and use the farthest
+          const corners = [
+            { lat: bounds.north, lon: bounds.east },
+            { lat: bounds.north, lon: bounds.west },
+            { lat: bounds.south, lon: bounds.east },
+            { lat: bounds.south, lon: bounds.west },
+          ];
+          const dists = corners.map(c =>
+            haversine(centerLat, centerLon, c.lat, c.lon),
+          );
+          const maxDist = Math.max(...dists);
+          // Add small buffer to ensure full coverage
+          radius = Math.max(radius, Math.ceil(maxDist * 1.05));
+          console.log(
+            'Bounds-based radius computed (m):',
+            radius,
+            'maxDist',
+            maxDist,
+          );
+        }
 
         console.log('Fetching playgrounds near:', {
           lat: centerLat,
@@ -134,6 +181,7 @@ function AppContent() {
           radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
         });
 
+        // Build params now that radius is finalized
         const params = new URLSearchParams({
           lat: String(centerLat),
           lon: String(centerLon),
@@ -856,7 +904,7 @@ out body center;`;
                 lastFetchCenterRef.current = center;
                 lastFetchZoomRef.current = zoom;
 
-                fetchPlaygrounds(center, zoom);
+                fetchPlaygrounds(center, zoom, bounds);
               }, 2000); // 2 seconds debounce (increased from 500ms)
             }}
             onMapTap={coords => {

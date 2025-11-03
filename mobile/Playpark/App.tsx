@@ -109,17 +109,36 @@ function AppContent() {
         setLoading(true);
         console.log('Fetching playgrounds...');
 
-        // Use provided center or default to Lisbon
-        const centerLat = center?.lat || 38.7223;
-        const centerLon = center?.lon || -9.1393;
+        // Resolve center: prefer explicit center, then bounds center, then Cova da Piedade (Almada) default
+        const COVA_DA_PIEDADE = { lat: 38.6655, lon: -9.1535 };
         const zoomLevel = zoom || 15;
+
+        let resolvedCenterLat: number;
+        let resolvedCenterLon: number;
+
+        if (
+          center &&
+          typeof center.lat === 'number' &&
+          typeof center.lon === 'number'
+        ) {
+          resolvedCenterLat = center.lat;
+          resolvedCenterLon = center.lon;
+        } else if (bounds) {
+          // center of visible bbox
+          resolvedCenterLat = (bounds.north + bounds.south) / 2;
+          resolvedCenterLon = (bounds.east + bounds.west) / 2;
+        } else {
+          // fallback to Cova da Piedade (Almada)
+          resolvedCenterLat = COVA_DA_PIEDADE.lat;
+          resolvedCenterLon = COVA_DA_PIEDADE.lon;
+        }
 
         // Calculate radius based on zoom level - same as frontend
         const calculateRadius = (z: number): number => {
           // Reduced radius to avoid Overpass API 504 timeouts
           // Zoom levels: 13=~5km, 15=~2km, 17=~1km
           const baseRadius =
-            (40075000 * Math.cos((centerLat * Math.PI) / 180)) /
+            (40075000 * Math.cos((resolvedCenterLat * Math.PI) / 180)) /
             Math.pow(2, z + 8);
 
           // Reduced multiplier from 2.5 to 1.5 for faster queries
@@ -161,7 +180,7 @@ function AppContent() {
             { lat: bounds.south, lon: bounds.west },
           ];
           const dists = corners.map(c =>
-            haversine(centerLat, centerLon, c.lat, c.lon),
+            haversine(resolvedCenterLat, resolvedCenterLon, c.lat, c.lon),
           );
           const maxDist = Math.max(...dists);
           // Add small buffer to ensure full coverage
@@ -175,16 +194,16 @@ function AppContent() {
         }
 
         console.log('Fetching playgrounds near:', {
-          lat: centerLat,
-          lon: centerLon,
+          lat: resolvedCenterLat,
+          lon: resolvedCenterLon,
           zoom: zoomLevel,
           radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
         });
 
         // Build params now that radius is finalized
         const params = new URLSearchParams({
-          lat: String(centerLat),
-          lon: String(centerLon),
+          lat: String(resolvedCenterLat),
+          lon: String(resolvedCenterLon),
           radius: String(Math.round(radius)),
           ...filters,
         });
@@ -193,15 +212,26 @@ function AppContent() {
 
         // Construct Overpass QL query with reduced timeout and optimized query
         // Use bbox (bounding box) instead of around for better performance
-        const latDelta = radius / 111320; // degrees latitude
-        const lonDelta =
-          radius / (111320 * Math.cos((centerLat * Math.PI) / 180)); // degrees longitude
-        const bbox = {
-          south: centerLat - latDelta,
-          west: centerLon - lonDelta,
-          north: centerLat + latDelta,
-          east: centerLon + lonDelta,
-        };
+        // Use visible bounds directly when available to narrow query area and speed results
+        let bbox: { south: number; west: number; north: number; east: number };
+        if (bounds) {
+          bbox = {
+            south: bounds.south,
+            west: bounds.west,
+            north: bounds.north,
+            east: bounds.east,
+          };
+        } else {
+          const latDelta = radius / 111320; // degrees latitude
+          const lonDelta =
+            radius / (111320 * Math.cos((resolvedCenterLat * Math.PI) / 180)); // degrees longitude
+          bbox = {
+            south: resolvedCenterLat - latDelta,
+            west: resolvedCenterLon - lonDelta,
+            north: resolvedCenterLat + latDelta,
+            east: resolvedCenterLon + lonDelta,
+          };
+        }
 
         // Simplified query with shorter timeout and only nodes (faster)
         let overpassQuery = `[out:json][timeout:15][bbox:${bbox.south},${bbox.west},${bbox.north},${bbox.east}];
@@ -213,7 +243,7 @@ out body center;`;
         console.log('=== OVERPASS QUERY ===');
         console.log('Query:', overpassQuery);
         console.log('Search params:', {
-          center: `${centerLat}, ${centerLon}`,
+          center: `${resolvedCenterLat}, ${resolvedCenterLon}`,
           radius: `${Math.round(radius)}m (${(radius / 1000).toFixed(1)}km)`,
           bbox: bbox,
           zoom: zoomLevel,
@@ -489,8 +519,8 @@ out body center;`;
           );
           console.log(
             '  Search center:',
-            centerLat.toFixed(4),
-            centerLon.toFixed(4),
+            resolvedCenterLat.toFixed(4),
+            resolvedCenterLon.toFixed(4),
           );
           console.log('  Search radius:', (radius / 1000).toFixed(1), 'km');
         }
@@ -838,7 +868,8 @@ out body center;`;
           <Map
             ref={mapRef}
             playgrounds={playgrounds}
-            initialCenter={userLocation || { lat: 38.7223, lon: -9.1393 }}
+            // Default initial center fallback changed to Cova da Piedade (Almada)
+            initialCenter={userLocation || { lat: 38.6655, lon: -9.1535 }}
             initialZoom={15}
             onBoundsChange={(bounds, zoom, center) => {
               console.log('Bounds changed:', {
@@ -859,15 +890,15 @@ out body center;`;
               }
 
               fetchTimeoutRef.current = setTimeout(() => {
-                // Throttle: minimum 3 seconds between API calls to avoid 429 errors
+                // Throttle: minimum 2 seconds between API calls to avoid 429 errors
                 const now = Date.now();
                 const timeSinceLastFetch = now - lastFetchTimeRef.current;
 
                 // Check if we should skip this fetch
-                if (timeSinceLastFetch < 3000) {
+                if (timeSinceLastFetch < 2000) {
                   console.log('Skipping fetch - too soon after last request:', {
                     timeSinceLastFetch: `${timeSinceLastFetch}ms`,
-                    waitTime: `${3000 - timeSinceLastFetch}ms`,
+                    waitTime: `${2000 - timeSinceLastFetch}ms`,
                   });
                   return;
                 }
@@ -905,7 +936,7 @@ out body center;`;
                 lastFetchZoomRef.current = zoom;
 
                 fetchPlaygrounds(center, zoom, bounds);
-              }, 2000); // 2 seconds debounce (increased from 500ms)
+              }, 1000); // 1 second debounce for snappier UX
             }}
             onMapTap={coords => {
               console.log('Map tapped at', coords);

@@ -97,6 +97,9 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // NEW: state for the lucide red icon
+  const [lucideIcon, setLucideIcon] = useState<any>(null);
+
   useEffect(() => {
     // This is necessary for the icons in SSR
     import("leaflet").then((L) => {
@@ -107,6 +110,24 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
         iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
         shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
       });
+
+      // Solid filled pin using requested color #C91C1C — increased size (double)
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="56" height="56" role="img" aria-hidden="true">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#C91C1C"/>
+        </svg>
+      `;
+      const divIcon = L.divIcon({
+        className: "",
+        html: svg,
+        // iconSize doubled from 28 -> 56
+        iconSize: [56, 56],
+        // anchor moved to half width, full height
+        iconAnchor: [28, 56],
+        // popup anchor moved appropriately
+        popupAnchor: [0, -56],
+      });
+      setLucideIcon(divIcon);
     });
   }, []);
 
@@ -218,6 +239,7 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
           <Marker
             key={playground.id}
             position={[playground.lat, playground.lon]}
+            icon={lucideIcon || undefined} // NEW: use lucide red icon when available
             eventHandlers={{
               click: () => handleMarkerClick(playground),
             }}
@@ -226,7 +248,6 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
           </Marker>
         ))}
       </MapContainer>
-
       {/* App Drawer */}
       <div
         className={`fixed left-0 right-0 bottom-0 bg-white rounded-t-xl shadow-2xl transform transition-all duration-300 z-[1000] ${

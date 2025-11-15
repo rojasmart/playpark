@@ -2,7 +2,8 @@
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useRef } from "react";
-import { X, Star, MapPin, Clock, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Star, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { isFavorite, toggleFavorite } from "@/lib/favorites";
 
 interface Playground {
   id: string | number;
@@ -96,6 +97,7 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
   const [selectedPlayground, setSelectedPlayground] = useState<Playground | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFav, setIsFav] = useState(false);
 
   // NEW: state for the lucide red icon
   const [lucideIcon, setLucideIcon] = useState<any>(null);
@@ -146,8 +148,26 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
     if (selectedPlayground) {
       console.debug("selectedPlayground:", selectedPlayground);
       setCurrentImageIndex(0);
+      setIsFav(isFavorite(String(selectedPlayground.id)));
     }
   }, [selectedPlayground]);
+
+  const handleToggleFavorite = () => {
+    if (selectedPlayground) {
+      const playgroundData = {
+        id: String(selectedPlayground.id),
+        name: selectedPlayground.name || "Parque Infantil",
+        lat: selectedPlayground.lat,
+        lon: selectedPlayground.lon,
+        description: selectedPlayground.description || selectedPlayground.tags?.description,
+        images: selectedPlayground.images,
+        tags: selectedPlayground.tags,
+      };
+
+      const newFavStatus = toggleFavorite(playgroundData);
+      setIsFav(newFavStatus);
+    }
+  };
 
   const isTruthyTag = (val: any) => {
     if (val === true) return true;
@@ -268,9 +288,18 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
                   </span>
                 </div>
               </div>
-              <button onClick={closeDrawer} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <X className="w-6 h-6 text-gray-500" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleToggleFavorite}
+                  className={`p-2 rounded-full transition-colors ${isFav ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-100"}`}
+                  title={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Heart className={`w-6 h-6 ${isFav ? "text-[#C91C1C] fill-[#C91C1C]" : "text-gray-500"}`} />
+                </button>
+                <button onClick={closeDrawer} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-6 h-6 text-gray-500" />
+                </button>
+              </div>
             </div>
 
             {/* Photo - show first image if available */}

@@ -156,7 +156,7 @@ export default function FavoritesPage() {
                         .filter(([key, value]) => value === "yes" || value === true)
                         .slice(0, 3)
                         .map(([key]) => (
-                          <span key={key} className="px-2 py-1 text-xs font-medium bg-[#C91C1C] bg-opacity-10 text-[#C91C1C] rounded">
+                          <span key={key} className="px-2 py-1 text-xs font-medium bg-[#C91C1C] bg-opacity-10 text-white rounded">
                             {key.replace("playground:", "").replace(/_/g, " ")}
                           </span>
                         ))}

@@ -19,7 +19,6 @@ import {
   Text,
   TouchableOpacity,
   Image,
-  Linking,
   Platform,
   ScrollView,
   Modal,

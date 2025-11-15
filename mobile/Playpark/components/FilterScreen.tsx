@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 interface FilterScreenProps {
   onBack: () => void;
   filters: Record<string, any>;
@@ -80,8 +82,8 @@ const FilterScreen: React.FC<FilterScreenProps> = ({
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Voltar</Text>
+        <TouchableOpacity onPress={onBack}>
+          <Icon name="arrow-back" size={20} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Filtros</Text>
         <TouchableOpacity onPress={clearAllFilters} style={styles.clearButton}>
@@ -157,12 +159,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
-    backgroundColor: '#d7d7d7ff',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
+
   backButtonText: {
     fontSize: 16,
     color: '#fff',

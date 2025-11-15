@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 // Minimal ambient for geolocation available on RN environments
 declare const navigator: any;
 // prefer community geolocation for native permission behavior
@@ -280,8 +282,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Voltar</Text>
+        <TouchableOpacity onPress={onBack}>
+          <Icon name="arrow-back" size={20} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Adicionar Parque</Text>
         <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
@@ -429,16 +431,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  backButton: {
-    backgroundColor: '#d7d7d7ff',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#fff',
-  },
+
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',

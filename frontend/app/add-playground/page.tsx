@@ -341,7 +341,7 @@ export default function AddPlaygroundPage() {
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 mb-6 p-6">
           <div className="flex items-center gap-4 mb-4">
-            <Link href="/" className="text-blue-600 hover:text-blue-700">
+            <Link href="/" className="text-red-700 hover:text-red-800">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div>
@@ -719,7 +719,7 @@ export default function AddPlaygroundPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-8 py-3 bg-red-700 text-white font-medium rounded-lg hover:bg-red-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? (
                 <>
@@ -727,10 +727,7 @@ export default function AddPlaygroundPage() {
                   Enviando...
                 </>
               ) : (
-                <>
-                  <Plus className="w-4 h-4" />
-                  Adicionar Parque
-                </>
+                <>Adicionar Parque</>
               )}
             </button>
           </div>

@@ -955,7 +955,7 @@ out body center;`;
             style={styles.registerButton}
             onPress={() => setShowRegisterScreen(true)}
           >
-            <Text style={styles.registerButtonText}>Registar Parque</Text>
+            <Text style={styles.registerButtonText}>Adicionar Parque</Text>
           </TouchableOpacity>
 
           {/* Recenter floating icon button (bottom-left) */}
@@ -1189,7 +1189,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0ea5ff',
+    color: '#c10007',
     textAlign: 'center',
     flex: 1,
   },
@@ -1268,7 +1268,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     right: 10,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#c10007',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,

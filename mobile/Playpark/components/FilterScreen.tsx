@@ -81,7 +81,7 @@ const FilterScreen: React.FC<FilterScreenProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
+          <Text style={styles.backButtonText}>Voltar</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Filtros</Text>
         <TouchableOpacity onPress={clearAllFilters} style={styles.clearButton}>
@@ -158,12 +158,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
   },
   backButton: {
-    padding: 5,
+    backgroundColor: '#d7d7d7ff',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
   },
   backButtonText: {
     fontSize: 16,
-    color: '#4CAF50',
-    fontWeight: '500',
+    color: '#fff',
   },
   headerTitle: {
     fontSize: 18,
@@ -171,12 +173,14 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   clearButton: {
-    padding: 5,
+    backgroundColor: '#000',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
   },
   clearButtonText: {
     fontSize: 16,
-    color: '#ff5722',
-    fontWeight: '500',
+    color: 'white',
   },
   content: {
     flex: 1,
@@ -205,8 +209,8 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   filterChipActive: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#c10007',
+    borderColor: '#c10007',
   },
   filterChipText: {
     fontSize: 14,
@@ -251,7 +255,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#e0e0e0',
   },
   applyButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#c10007',
     paddingVertical: 15,
     borderRadius: 25,
     alignItems: 'center',

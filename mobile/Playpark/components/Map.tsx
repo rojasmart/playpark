@@ -83,8 +83,17 @@ function MobileMap(
           markers.length = 0;
         }
 
+        // Create custom red marker icon
+        const redIcon = L.divIcon({
+          className: 'custom-red-marker',
+          html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#c10007"/></svg>',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32]
+        });
+
         function addMarkerFor(p) {
-          const m = L.marker([p.lat, p.lon]).addTo(map);
+          const m = L.marker([p.lat, p.lon], { icon: redIcon }).addTo(map);
           const title = p.name || (p.tags && (p.tags.name || p.tags.operator)) || ('Parque ' + p.id);
           m.bindPopup(title);
           m.on('click', function() { send({ type: 'markerPress', payload: p }); });

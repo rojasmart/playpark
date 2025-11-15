@@ -38,9 +38,8 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
   const handleShowFavorites = () => {
     if (onShowFavorites) {
       onShowFavorites();
-    } else {
-      alert("Funcionalidade de favoritos em desenvolvimento!");
     }
+    // Navigation will be handled by Link component
   };
 
   return (
@@ -88,14 +87,14 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
             </button>
 
             {/* Favorites */}
-            <button
-              onClick={handleShowFavorites}
+            <Link
+              href="/favorites"
               className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
               aria-label="Favoritos"
               title="Favoritos"
             >
               <Heart className="w-5 h-5" />
-            </button>
+            </Link>
 
             {/* Add New Park Button */}
             <Link

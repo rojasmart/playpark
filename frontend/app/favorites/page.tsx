@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { Heart, MapPin, Star, Trash2, Navigation } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import Footer from "@/components/Footer";
 
 interface Playground {
@@ -17,10 +19,17 @@ interface Playground {
 }
 
 export default function FavoritesPage() {
+  const router = useRouter();
   const [favorites, setFavorites] = useState<Playground[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      router.push("/login");
+      return;
+    }
+
     // Load favorites from localStorage
     const loadFavorites = () => {
       try {
@@ -36,7 +45,7 @@ export default function FavoritesPage() {
     };
 
     loadFavorites();
-  }, []);
+  }, [router]);
 
   const removeFavorite = (id: string) => {
     const updatedFavorites = favorites.filter((fav) => fav.id !== id);

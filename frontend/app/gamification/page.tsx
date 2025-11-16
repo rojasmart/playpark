@@ -2,10 +2,13 @@
 import { useState, useEffect } from "react";
 import { Trophy, MapPin, Target, Award, TrendingUp, Star } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 import { getUserStats, BADGES, Badge, calculateProgress } from "@/lib/gamification";
 import Footer from "@/components/Footer";
 
 export default function GamificationPage() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     visitedCount: 0,
     favoritesCount: 0,
@@ -14,8 +17,14 @@ export default function GamificationPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      router.push("/login");
+      return;
+    }
+
     loadStats();
-  }, []);
+  }, [router]);
 
   const loadStats = async () => {
     try {

@@ -41,7 +41,7 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
     setLoggedIn(false);
     setCurrentUser(null);
     setShowUserMenu(false);
-    router.push("/landing");
+    router.push("/"); // Redirect to landing page
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -117,34 +117,40 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Favorites */}
-            <Link
-              href="/favorites"
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-              aria-label="Favoritos"
-              title="Favoritos"
-            >
-              <Heart className="w-5 h-5" />
-            </Link>
+            {/* Favorites - Only show when logged in */}
+            {loggedIn && (
+              <Link
+                href="/favorites"
+                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                aria-label="Favoritos"
+                title="Favoritos"
+              >
+                <Heart className="w-5 h-5" />
+              </Link>
+            )}
 
-            {/* Gamification */}
-            <Link
-              href="/gamification"
-              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
-              aria-label="Conquistas"
-              title="Conquistas e Badges"
-            >
-              <Trophy className="w-5 h-5" />
-            </Link>
+            {/* Gamification - Only show when logged in */}
+            {loggedIn && (
+              <Link
+                href="/gamification"
+                className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                aria-label="Conquistas"
+                title="Conquistas e Badges"
+              >
+                <Trophy className="w-5 h-5" />
+              </Link>
+            )}
 
-            {/* Add New Park Button */}
-            <Link
-              href="/add-playground"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-            >
-              <span className="hidden sm:inline">Adicionar Parque</span>
-              <span className="sm:hidden">Adicionar</span>
-            </Link>
+            {/* Add New Park Button - Only show when logged in */}
+            {loggedIn && (
+              <Link
+                href="/add-playground"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+              >
+                <span className="hidden sm:inline">Adicionar Parque</span>
+                <span className="sm:hidden">Adicionar</span>
+              </Link>
+            )}
 
             {/* User Menu */}
             {loggedIn && currentUser ? (

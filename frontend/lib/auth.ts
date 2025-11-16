@@ -62,30 +62,49 @@ export function login(user: User): void {
 export function logout(): void {
   if (typeof window === "undefined") return;
   
+  // Clear all user data on logout
   localStorage.removeItem(IS_LOGGED_IN_KEY);
-  // Keep userId for guest mode
-  // localStorage.removeItem(USER_ID_KEY);
-  // localStorage.removeItem(USER_EMAIL_KEY);
-  // localStorage.removeItem(USER_NAME_KEY);
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(USER_EMAIL_KEY);
+  localStorage.removeItem(USER_NAME_KEY);
 }
 
 /**
  * Register new user (creates account)
  */
-export async function register(email: string, name: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> {
+export async function register(email: string, password: string, name: string): Promise<{ success: boolean; error?: string; user?: User }> {
   try {
-    // In a real app, this would call a backend API
-    // For now, we'll create a user with email-based ID
+    // Get current userId (anonymous or existing)
+    const currentUserId = getOrCreateGuestUserId();
     
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Call backend to update user with email and name
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const response = await fetch(`${API_URL}/users/${currentUserId}/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        name,
+        password, // In production, this would be hashed
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || "Failed to register" };
+    }
+    
+    const data = await response.json();
     
     const user: User = {
-      userId,
+      userId: currentUserId, // Keep the same userId
       email,
       name,
     };
     
-    // Store user data
+    // Store user data (mark as logged in)
     login(user);
     
     return { success: true, user };
@@ -100,32 +119,38 @@ export async function register(email: string, name: string, password: string): P
  */
 export async function loginUser(email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> {
   try {
-    // In a real app, this would validate credentials with backend
-    // For now, we'll accept any credentials and retrieve/create user
+    // Call backend to validate credentials
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const response = await fetch(`${API_URL}/users/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
     
-    // Check if we already have a user with this email
-    const existingUserId = localStorage.getItem(USER_ID_KEY);
-    const existingEmail = localStorage.getItem(USER_EMAIL_KEY);
-    
-    if (existingEmail === email && existingUserId) {
-      // User exists locally
-      const user: User = {
-        userId: existingUserId,
-        email: existingEmail,
-        name: localStorage.getItem(USER_NAME_KEY) || undefined,
-      };
-      
-      login(user);
-      return { success: true, user };
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || "Failed to login" };
     }
     
-    // Create new user
-    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const data = await response.json();
+    
     const user: User = {
-      userId,
-      email,
-      name: email.split("@")[0], // Use email prefix as name
+      userId: data.userId,
+      email: data.email,
+      name: data.name,
     };
+    
+    // If we had an anonymous userId, we might want to merge data
+    const currentUserId = localStorage.getItem(USER_ID_KEY);
+    if (currentUserId && currentUserId !== data.userId) {
+      // TODO: Merge anonymous user data with logged in user
+      console.log("TODO: Merge anonymous data from", currentUserId, "to", data.userId);
+    }
     
     login(user);
     return { success: true, user };

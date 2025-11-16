@@ -21,6 +21,15 @@ const userSchema = new mongoose.Schema(
     // Nome (opcional)
     name: String,
 
+    // Password (for registered users)
+    password: String,
+
+    // Flag to indicate if user is registered
+    isRegistered: {
+      type: Boolean,
+      default: false,
+    },
+
     // Favoritos - array de referências aos parques
     favorites: [
       {

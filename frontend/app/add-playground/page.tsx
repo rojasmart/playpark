@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, Plus, Star, Upload, X, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { isLoggedIn } from "@/lib/auth";
 
 interface PlaygroundData {
   name: string;
@@ -39,6 +41,16 @@ interface PlaygroundData {
 }
 
 export default function AddPlaygroundPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+      router.push("/login");
+      return;
+    }
+  }, [router]);
+
   const [formData, setFormData] = useState<PlaygroundData>({
     name: "",
     description: "",

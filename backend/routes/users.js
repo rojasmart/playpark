@@ -3,6 +3,92 @@ const router = express.Router();
 const User = require("../models/User");
 
 /**
+ * POST /api/users/:userId/register
+ * Registrar um usuário (converter anônimo em registrado)
+ * Body: { email, name, password }
+ */
+router.post("/:userId/register", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { email, name, password } = req.body;
+
+    // Validar dados obrigatórios
+    if (!email || !name || !password) {
+      return res.status(400).json({ error: "Missing required fields: email, name, password" });
+    }
+
+    // Verificar se email já está em uso
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser && existingUser.userId !== userId) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+
+    // Buscar ou criar usuário
+    let user = await User.findOne({ userId });
+
+    if (!user) {
+      user = new User({ userId });
+    }
+
+    // Atualizar com informações de registro
+    user.email = email.toLowerCase();
+    user.name = name;
+    user.password = password; // In production, hash this password
+    user.isRegistered = true;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "User registered successfully",
+      userId: user.userId,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (error) {
+    console.error("Error registering user:", error);
+    res.status(500).json({ error: "Failed to register user" });
+  }
+});
+
+/**
+ * POST /api/users/login
+ * Login de usuário existente
+ * Body: { email, password }
+ */
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validar dados obrigatórios
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing required fields: email, password" });
+    }
+
+    // Buscar usuário por email
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Verificar senha (in production, use bcrypt.compare)
+    if (user.password !== password) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    res.status(200).json({
+      message: "Login successful",
+      userId: user.userId,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({ error: "Failed to login" });
+  }
+});
+
+/**
  * GET /api/users/:userId/favorites
  * Obter todos os favoritos de um usuário
  */

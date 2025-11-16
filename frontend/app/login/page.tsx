@@ -21,8 +21,8 @@ export default function LoginPage() {
       const result = await loginUser(email, password);
 
       if (result.success) {
-        // Redirect to app
-        router.push("/app");
+        // Redirect to map page after successful login
+        router.push("/map");
       } else {
         setError(result.error || "Falha no login");
       }
@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/landing" className="inline-flex items-center justify-center space-x-2 mb-4">
+          <Link href="/" className="inline-flex items-center justify-center space-x-2 mb-4">
             <MapPin className="w-12 h-12 text-white" />
             <span className="text-4xl font-bold text-white">Playpark</span>
           </Link>
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
             {/* Guest Mode */}
             <Link
-              href="/app"
+              href="/map"
               className="w-full block text-center border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
             >
               Continuar como Visitante
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
         {/* Back to Landing */}
         <div className="mt-6 text-center">
-          <Link href="/landing" className="text-white/90 hover:text-white text-sm">
+          <Link href="/" className="text-white/90 hover:text-white text-sm">
             ← Voltar para página inicial
           </Link>
         </div>

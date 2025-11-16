@@ -61,8 +61,8 @@ export default function RegisterPage() {
       const result = await register(formData.email, formData.password, formData.name);
 
       if (result.success) {
-        // Redirect to app
-        router.push("/app");
+        // Redirect to map page after successful registration
+        router.push("/map");
       } else {
         setError(result.error || "Falha no registro");
       }
@@ -78,7 +78,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/landing" className="inline-flex items-center justify-center space-x-2 mb-4">
+          <Link href="/" className="inline-flex items-center justify-center space-x-2 mb-4">
             <MapPin className="w-12 h-12 text-white" />
             <span className="text-4xl font-bold text-white">Playpark</span>
           </Link>
@@ -244,7 +244,7 @@ export default function RegisterPage() {
 
         {/* Back to Landing */}
         <div className="mt-6 text-center">
-          <Link href="/landing" className="text-white/90 hover:text-white text-sm">
+          <Link href="/" className="text-white/90 hover:text-white text-sm">
             ← Voltar para página inicial
           </Link>
         </div>

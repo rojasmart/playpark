@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, Heart, Trophy, Star, Users, Map as MapIcon, Download, ArrowRight, CheckCircle } from "lucide-react";
+import { MapPin, Heart, Trophy, Users, Map as MapIcon, Download, ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { isLoggedIn } from "@/lib/auth";
 
@@ -59,8 +59,11 @@ export default function LandingPage() {
               </Link>
               {userLoggedIn ? (
                 <>
-                  <Link href="/map" className="bg-[#C91C1C] text-white px-6 py-2 rounded-lg hover:bg-[#A01515] transition-colors">
-                    Ir para o Mapa
+                  <Link href="/favorites" className="text-gray-600 hover:text-[#C91C1C] transition-colors">
+                    Favoritos
+                  </Link>
+                  <Link href="/gamification" className="bg-[#C91C1C] text-white px-6 py-2 rounded-lg hover:bg-[#A01515] transition-colors">
+                    Conquistas
                   </Link>
                 </>
               ) : (
@@ -92,7 +95,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href={userLoggedIn ? "/map" : "/register"}
+              href={userLoggedIn ? "/favorites" : "/register"}
               className="bg-[#C91C1C] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#A01515] transition-colors flex items-center gap-2"
             >
               Começar Agora
@@ -171,7 +174,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href={userLoggedIn ? "/app" : "/register"}
+              href={userLoggedIn ? "/favorites" : "/register"}
               className="bg-[#C91C1C] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#A01515] transition-colors inline-flex items-center justify-center gap-2"
             >
               <CheckCircle className="w-5 h-5" />
@@ -185,7 +188,6 @@ export default function LandingPage() {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            {/* Logo and Description */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <MapPin className="w-8 h-8 text-[#C91C1C]" />
@@ -193,7 +195,6 @@ export default function LandingPage() {
               </div>
               <p className="text-gray-400 mb-4">A plataforma mais completa para descobrir e explorar parques infantis em Portugal.</p>
 
-              {/* App Download Buttons */}
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-gray-300">Baixe o App Mobile:</p>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -221,18 +222,12 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Links */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Links Rápidos</h3>
               <ul className="space-y-2">
                 <li>
                   <Link href="/map" className="text-gray-400 hover:text-white transition-colors">
                     Ver Mapa
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/app" className="text-gray-400 hover:text-white transition-colors">
-                    Aplicação Completa
                   </Link>
                 </li>
                 <li>
@@ -248,7 +243,6 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Account */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Conta</h3>
               <ul className="space-y-2">
@@ -276,7 +270,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Bottom Bar */}
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm mb-4 md:mb-0">© 2025 Playpark. Todos os direitos reservados.</p>
             <div className="flex gap-6">

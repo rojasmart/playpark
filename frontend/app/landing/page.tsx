@@ -56,11 +56,8 @@ export default function LandingPage() {
             <div className="flex items-center gap-4">
               {userLoggedIn ? (
                 <>
-                  <Link href="/app" className="text-gray-600 hover:text-[#C91C1C] transition-colors">
-                    Ir para o App
-                  </Link>
-                  <Link href="/app" className="bg-[#C91C1C] text-white px-6 py-2 rounded-lg hover:bg-[#A01515] transition-colors">
-                    Dashboard
+                  <Link href="/map" className="bg-[#C91C1C] text-white px-6 py-2 rounded-lg hover:bg-[#A01515] transition-colors">
+                    Ir para o Mapa
                   </Link>
                 </>
               ) : (
@@ -92,7 +89,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href={userLoggedIn ? "/app" : "/register"}
+              href={userLoggedIn ? "/map" : "/register"}
               className="bg-[#C91C1C] text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-[#A01515] transition-colors flex items-center gap-2"
             >
               Começar Agora

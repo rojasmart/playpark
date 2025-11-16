@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plus, MapPin, Heart, Search, X } from "lucide-react";
+import { Plus, MapPin, Heart, Search, X, Trophy } from "lucide-react";
 import Link from "next/link";
 
 interface HeaderProps {
@@ -94,6 +94,16 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
               title="Favoritos"
             >
               <Heart className="w-5 h-5" />
+            </Link>
+
+            {/* Gamification */}
+            <Link
+              href="/gamification"
+              className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+              aria-label="Conquistas"
+              title="Conquistas e Badges"
+            >
+              <Trophy className="w-5 h-5" />
             </Link>
 
             {/* Add New Park Button */}

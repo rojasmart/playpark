@@ -177,4 +177,131 @@ router.get("/:userId/favorites/check/:playgroundId", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/users/:userId/visited
+ * Marcar um parque como visitado
+ * Body: { playgroundId }
+ */
+router.post("/:userId/visited", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { playgroundId } = req.body;
+
+    if (!playgroundId) {
+      return res.status(400).json({ error: "Missing playgroundId" });
+    }
+
+    // Buscar ou criar usuário
+    let user = await User.findOne({ userId });
+
+    if (!user) {
+      user = new User({ userId });
+    }
+
+    // Verificar se já foi visitado
+    const alreadyVisited = user.visited.some((v) => v.playgroundId === playgroundId);
+
+    if (alreadyVisited) {
+      return res.status(409).json({ error: "Playground already marked as visited" });
+    }
+
+    // Adicionar aos visitados
+    user.visited.push({
+      playgroundId,
+      visitedAt: new Date(),
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      message: "Marked as visited",
+      visitedCount: user.visited.length,
+    });
+  } catch (error) {
+    console.error("Error marking as visited:", error);
+    res.status(500).json({ error: "Failed to mark as visited" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/visited
+ * Obter todos os parques visitados
+ */
+router.get("/:userId/visited", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findOne({ userId });
+
+    if (!user) {
+      return res.json([]);
+    }
+
+    // Retornar visitados ordenados por data (mais recentes primeiro)
+    const visited = user.visited
+      .sort((a, b) => b.visitedAt - a.visitedAt)
+      .map((v) => ({
+        playgroundId: v.playgroundId,
+        visitedAt: v.visitedAt,
+      }));
+
+    res.json(visited);
+  } catch (error) {
+    console.error("Error fetching visited:", error);
+    res.status(500).json({ error: "Failed to fetch visited playgrounds" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/visited/check/:playgroundId
+ * Verificar se um parque foi visitado
+ */
+router.get("/:userId/visited/check/:playgroundId", async (req, res) => {
+  try {
+    const { userId, playgroundId } = req.params;
+
+    const user = await User.findOne({ userId });
+
+    if (!user) {
+      return res.json({ isVisited: false });
+    }
+
+    const isVisited = user.visited.some((v) => v.playgroundId === playgroundId);
+
+    res.json({ isVisited });
+  } catch (error) {
+    console.error("Error checking visited:", error);
+    res.status(500).json({ error: "Failed to check visited" });
+  }
+});
+
+/**
+ * GET /api/users/:userId/stats
+ * Obter estatísticas do usuário (favoritos, visitados, badges)
+ */
+router.get("/:userId/stats", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findOne({ userId });
+
+    if (!user) {
+      return res.json({
+        visitedCount: 0,
+        favoritesCount: 0,
+        lastSync: null,
+      });
+    }
+
+    res.json({
+      visitedCount: user.visited.length,
+      favoritesCount: user.favorites.length,
+      lastSync: user.lastSync,
+    });
+  } catch (error) {
+    console.error("Error fetching stats:", error);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
 module.exports = router;

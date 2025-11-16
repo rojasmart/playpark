@@ -2,8 +2,9 @@
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useRef } from "react";
-import { X, Star, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { X, Star, MapPin, Clock, Users, ChevronLeft, ChevronRight, Heart, CheckCircle } from "lucide-react";
 import { isFavorite, toggleFavorite } from "@/lib/favorites";
+import { isVisited, markAsVisited } from "@/lib/gamification";
 
 interface Playground {
   id: string | number;
@@ -98,6 +99,7 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFav, setIsFav] = useState(false);
+  const [visited, setVisited] = useState(false);
 
   // NEW: state for the lucide red icon
   const [lucideIcon, setLucideIcon] = useState<any>(null);
@@ -149,6 +151,11 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
       console.debug("selectedPlayground:", selectedPlayground);
       setCurrentImageIndex(0);
       setIsFav(isFavorite(String(selectedPlayground.id)));
+
+      // Check if visited
+      isVisited(String(selectedPlayground.id)).then((result) => {
+        setVisited(result);
+      });
     }
   }, [selectedPlayground]);
 
@@ -168,6 +175,16 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
       setIsFav(newFavStatus);
     }
   };
+
+  const handleMarkAsVisited = async () => {
+    if (selectedPlayground && !visited) {
+      const success = await markAsVisited(String(selectedPlayground.id));
+      if (success) {
+        setVisited(true);
+      }
+    }
+  };
+
   const isTruthyTag = (val: any) => {
     if (val === true) return true;
     if (typeof val === "string") {
@@ -380,7 +397,7 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
             </div>
 
             {/* Additional Info */}
-            <div className="border-t pt-4">
+            <div className="border-t pt-4 mb-4">
               <div className="flex items-center text-gray-600 mb-2">
                 <Clock className="w-4 h-4 mr-2" />
                 <span className="text-sm">Aberto 24h</span>
@@ -389,6 +406,21 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
                 <Users className="w-4 h-4 mr-2" />
                 <span className="text-sm">Adequado para todas as idades</span>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="border-t pt-4">
+              <button
+                onClick={handleMarkAsVisited}
+                disabled={visited}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold transition-colors ${
+                  visited ? "bg-green-50 text-green-700 border-2 border-green-500 cursor-not-allowed" : "bg-[#C91C1C] text-white hover:bg-[#A01515]"
+                }`}
+              >
+                <CheckCircle className="w-5 h-5" />
+                {visited ? "✓ Já Visitei Este Parque" : "Marcar como Visitado"}
+              </button>
+              {visited && <p className="text-xs text-green-600 text-center mt-2">Parabéns! Este parque conta para suas conquistas 🎉</p>}
             </div>
           </div>
         )}

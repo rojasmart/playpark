@@ -152,7 +152,7 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
     }
   }, [selectedPlayground]);
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     if (selectedPlayground) {
       const playgroundData = {
         id: String(selectedPlayground.id),
@@ -164,11 +164,10 @@ function MapComponent({ playgrounds, onBoundsChange }: MapComponentProps) {
         tags: selectedPlayground.tags,
       };
 
-      const newFavStatus = toggleFavorite(playgroundData);
+      const newFavStatus = await toggleFavorite(playgroundData);
       setIsFav(newFavStatus);
     }
   };
-
   const isTruthyTag = (val: any) => {
     if (val === true) return true;
     if (typeof val === "string") {

@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const pointsRoutes = require("./routes/points");
+const usersRoutes = require("./routes/users");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +19,7 @@ mongoose
   .catch((err) => console.error("❌ Erro ao conectar MongoDB:", err.message));
 // Rotas
 app.use("/api/points", pointsRoutes);
+app.use("/api/users", usersRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor backend rodando na porta ${PORT}`);

@@ -358,12 +358,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
       <Header onAddNewPark={handleAddNewPark} onSearch={handleSearch} onShowFavorites={handleShowFavorites} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <FilterPanel filters={filters} setFilters={setFilters} />
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <Map playgrounds={playgrounds} onBoundsChange={handleBoundsChange} />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <FilterPanel filters={filters} setFilters={setFilters} />
+        </div>
+        <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-6 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+            <Map playgrounds={playgrounds} onBoundsChange={handleBoundsChange} />
+          </div>
         </div>
       </main>
       <FloatingInfoButton onShowInfo={handleShowInfo} />

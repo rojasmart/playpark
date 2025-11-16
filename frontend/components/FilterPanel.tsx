@@ -27,7 +27,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
   const activeFiltersCount = Object.values(filters).filter((value) => value && value !== "").length;
 
   return (
-    <div className="bg-white shadow-lg rounded-xl border border-gray-200 mb-6">
+    <div className="bg-white shadow-lg rounded-xl border border-gray-200">
       {/* Header */}
       <div className="p-4">
         <div className="flex items-center justify-between">
@@ -47,8 +47,7 @@ export default function FilterPanel({ filters, setFilters }: FilterProps) {
               </button>
             )}
             <button onClick={() => setIsExpanded(!isExpanded)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-600">
-              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              {isExpanded ? "Esconder filtros" : "Mostrar filtros"}
+              {isExpanded ? <ChevronUp className="w-8 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
         </div>

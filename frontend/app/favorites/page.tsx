@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Heart, MapPin, Star, Trash2, Navigation } from "lucide-react";
 import Link from "next/link";
+import Footer from "@/components/Footer";
 
 interface Playground {
   id: string;
@@ -186,6 +187,9 @@ export default function FavoritesPage() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

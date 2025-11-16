@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Trophy, MapPin, Target, Award, TrendingUp, Star } from "lucide-react";
 import Link from "next/link";
 import { getUserStats, BADGES, Badge, calculateProgress } from "@/lib/gamification";
+import Footer from "@/components/Footer";
 
 export default function GamificationPage() {
   const [stats, setStats] = useState({
@@ -239,6 +240,9 @@ export default function GamificationPage() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

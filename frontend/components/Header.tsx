@@ -1,7 +1,9 @@
 "use client";
-import { useState } from "react";
-import { Plus, MapPin, Heart, Search, X, Trophy } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, MapPin, Heart, Search, X, Trophy, User, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { isLoggedIn, getCurrentUser, logout } from "@/lib/auth";
 
 interface HeaderProps {
   onAddNewPark?: () => void;
@@ -10,8 +12,37 @@ interface HeaderProps {
 }
 
 export default function Header({ onAddNewPark, onSearch, onShowFavorites }: HeaderProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ userId: string; email?: string; name?: string } | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLoggedIn(isLoggedIn());
+    setCurrentUser(getCurrentUser());
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setLoggedIn(false);
+    setCurrentUser(null);
+    setShowUserMenu(false);
+    router.push("/landing");
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +145,47 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
               <span className="hidden sm:inline">Adicionar Parque</span>
               <span className="sm:hidden">Adicionar</span>
             </Link>
+
+            {/* User Menu */}
+            {loggedIn && currentUser ? (
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="hidden lg:inline text-sm font-medium">{currentUser.name || currentUser.email}</span>
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{currentUser.name || "Usuário"}</p>
+                      {currentUser.email && <p className="text-xs text-gray-500 truncate">{currentUser.email}</p>}
+                    </div>
+                    <Link
+                      href="/profile"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Settings className="w-4 h-4 mr-3" />
+                      Configurações
+                    </Link>
+                    <button onClick={handleLogout} className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50">
+                      <LogOut className="w-4 h-4 mr-3" />
+                      Sair
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
+              >
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
 

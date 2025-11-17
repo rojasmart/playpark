@@ -4,6 +4,7 @@ import { MapPin, Mail, Lock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/auth";
+import Header from "@/components/Header";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [loggedIn, setLoggedIn] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +24,7 @@ export default function LoginPage() {
       const result = await loginUser(email, password);
 
       if (result.success) {
+        setLoggedIn(true); // Atualiza estado para mostrar Header
         // Redirect to map page after successful login
         router.push("/map");
       } else {

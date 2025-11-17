@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { MapPin } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import Header from "@/components/Header";
 
 // Import Map component dynamically to avoid SSR issues
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
@@ -132,50 +133,31 @@ export default function PublicMapPage() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
-      {/* Simple Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <MapPin className="w-8 h-8 text-[#C91C1C]" />
-              <h1 className="text-xl font-bold text-[#C91C1C]">Playpark</h1>
-            </Link>
+    <>
+      <Header />
+      <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+        {/* Simple Header */}
 
-            <div className="flex items-center gap-4">
-              <Link href="/login" className="text-gray-600 hover:text-[#C91C1C] transition-colors text-sm">
-                Entrar
-              </Link>
-              <Link
-                href="/register"
-                className="bg-[#C91C1C] text-white px-6 py-2 rounded-lg hover:bg-[#A01515] transition-colors text-sm font-medium"
-              >
-                Criar Conta
-              </Link>
+        {/* Map */}
+        <main className="flex-1 overflow-hidden">
+          <div className="h-full max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
+              <Map playgrounds={playgrounds} onBoundsChange={handleBoundsChange} />
             </div>
           </div>
-        </div>
-      </header>
+        </main>
 
-      {/* Map */}
-      <main className="flex-1 overflow-hidden">
-        <div className="h-full max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full">
-            <Map playgrounds={playgrounds} onBoundsChange={handleBoundsChange} />
-          </div>
+        {/* Info Banner */}
+        <div className="bg-[#C91C1C] text-white py-3 px-4 text-center">
+          <p className="text-sm">
+            🎯{" "}
+            <Link href="/register" className="underline font-semibold">
+              Crie uma conta grátis
+            </Link>{" "}
+            para acessar filtros, favoritos e conquistar badges!
+          </p>
         </div>
-      </main>
-
-      {/* Info Banner */}
-      <div className="bg-[#C91C1C] text-white py-3 px-4 text-center">
-        <p className="text-sm">
-          🎯{" "}
-          <Link href="/register" className="underline font-semibold">
-            Crie uma conta grátis
-          </Link>{" "}
-          para acessar filtros, favoritos e conquistar badges!
-        </p>
       </div>
-    </div>
+    </>
   );
 }

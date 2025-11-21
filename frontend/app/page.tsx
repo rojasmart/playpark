@@ -2,14 +2,22 @@
 import { useState, useEffect } from "react";
 import { MapPin, Heart, Trophy, Star, Users, Map as MapIcon, Download, ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 
 export default function LandingPage() {
   const [userLoggedIn, setUserLoggedIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setUserLoggedIn(isLoggedIn());
-  }, []);
+    const logged = isLoggedIn();
+    setUserLoggedIn(logged);
+
+    // Redirect logged-in users to map
+    if (logged) {
+      router.push("/map");
+    }
+  }, [router]);
 
   const features = [
     {

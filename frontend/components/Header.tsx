@@ -41,7 +41,7 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
     setLoggedIn(false);
     setCurrentUser(null);
     setShowUserMenu(false);
-    router.push("/"); // Redirect to landing page
+    router.push("/map"); // Redirect to map page
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -78,10 +78,10 @@ export default function Header({ onAddNewPark, onSearch, onShowFavorites }: Head
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo */}
-          <div className="flex items-center space-x-2">
+          <Link href="/map" className="flex items-center space-x-2">
             <MapPin className="w-8 h-8 text-red-700" />
             <h1 className="text-xl font-bold text-red-700">Playpark</h1>
-          </div>
+          </Link>
 
           {/* Center - Search Bar (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-md mx-8">

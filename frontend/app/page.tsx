@@ -203,7 +203,7 @@ export default function LandingPage() {
 
               {/* App Download Buttons */}
               <div className="space-y-3">
-                <p className="text-sm font-semibold text-gray-300">Baixe o App Mobile:</p>
+                <p className="text-sm font-semibold text-gray-300">Faça download da App:</p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
                     href="#"

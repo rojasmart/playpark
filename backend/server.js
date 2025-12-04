@@ -21,6 +21,8 @@ mongoose
 app.use("/api/points", pointsRoutes);
 app.use("/api/users", usersRoutes);
 
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor backend rodando na porta ${PORT}`);
+  console.log(`📱 Acesso local: http://localhost:${PORT}`);
+  console.log(`📱 Acesso mobile: http://192.168.1.239:${PORT}`);
 });

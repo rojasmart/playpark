@@ -95,7 +95,7 @@ function AppContent() {
   // Use 10.0.2.2 to access host machine from Android emulator. On iOS simulator use localhost.
   const host =
     Platform.OS === 'android'
-      ? 'http://10.0.2.2:5000'
+      ? 'http://192.168.1.239:5000'
       : 'http://localhost:5000';
 
   const fetchPlaygrounds = useCallback(

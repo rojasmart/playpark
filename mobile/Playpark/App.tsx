@@ -24,6 +24,7 @@ import {
   Modal,
   Dimensions,
   Alert,
+  PermissionsAndroid,
 } from 'react-native';
 import {
   SafeAreaProvider,
@@ -106,6 +107,8 @@ function AppContent() {
     ) => {
       try {
         setLoading(true);
+        console.log('📍 Localização do utilizador:', userLocation);
+        console.log('🗺️ Centro do mapa:', center);
         console.log('Fetching playgrounds...');
 
         // Resolve center: prefer explicit center, then bounds center, then Cova da Piedade (Almada) default
@@ -618,32 +621,101 @@ out body center;`;
 
   useEffect(() => {
     // Auto-fetch playgrounds when app starts
-    // try to obtain device location for centering and recenter button
-    const tryLocation = async () => {
+    // Request location permission and try to obtain device location
+    const requestLocationPermission = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Permissão de Localização',
+              message:
+                'O Playpark precisa de acesso à sua localização para mostrar parques próximos',
+              buttonNeutral: 'Perguntar Mais Tarde',
+              buttonNegative: 'Cancelar',
+              buttonPositive: 'OK',
+            },
+          );
+
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('✅ Permissão de localização concedida');
+            tryLocation();
+          } else {
+            console.log('❌ Permissão de localização negada');
+            Alert.alert(
+              'Permissão Necessária',
+              'O Playpark precisa de acesso à sua localização para funcionar corretamente.',
+            );
+          }
+        } catch (err) {
+          console.warn('Erro ao solicitar permissão:', err);
+        }
+      } else {
+        // iOS - apenas tenta obter localização
+        tryLocation();
+      }
+    };
+
+    const tryLocation = () => {
       try {
+        console.log('Tentando obter localização...');
         Geolocation.getCurrentPosition(
           (pos: any) => {
             const newLocation = {
               lat: pos.coords.latitude,
               lon: pos.coords.longitude,
             };
-            console.log('Got user location:', newLocation);
+            console.log('✅ Localização obtida:', newLocation);
             setUserLocation(newLocation);
           },
           (error: any) => {
-            console.warn('Geolocation error:', error);
-            // Fetch playgrounds with default location if geolocation fails
-            // Will be triggered by map's onBoundsChange
+            console.warn('❌ Erro de geolocalização:', error);
+            console.warn('Código do erro:', error.code);
+            console.warn('Mensagem:', error.message);
+
+            // Tenta com watchPosition como fallback
+            console.log('Tentando watchPosition como fallback...');
+            const watchId = Geolocation.watchPosition(
+              (pos: any) => {
+                const newLocation = {
+                  lat: pos.coords.latitude,
+                  lon: pos.coords.longitude,
+                };
+                console.log('✅ Localização obtida (watch):', newLocation);
+                setUserLocation(newLocation);
+                Geolocation.clearWatch(watchId);
+              },
+              (watchError: any) => {
+                console.warn('❌ Erro watch position:', watchError);
+                Alert.alert(
+                  'Erro de Localização',
+                  `Não foi possível obter a localização.\nCódigo: ${
+                    watchError.code
+                  }\nMensagem: ${
+                    watchError.message || 'Desconhecido'
+                  }\n\nPor favor, verifique se o GPS está ativo.`,
+                );
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 20000,
+                maximumAge: 0,
+                distanceFilter: 10,
+              },
+            );
           },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 },
+          {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 0,
+          },
         );
       } catch (e) {
-        console.warn('Geolocation exception:', e);
-        // Will be triggered by map's onBoundsChange
+        console.warn('❌ Exceção de geolocalização:', e);
       }
     };
 
-    tryLocation();
+    requestLocationPermission();
 
     // Cleanup timeout on unmount
     return () => {
@@ -939,7 +1011,11 @@ out body center;`;
             }}
             onMapTap={coords => {
               console.log('Map tapped at', coords);
-              // open register and prefill coords
+              // Clique simples no mapa - não faz nada ou pode ser usado para outras ações
+            }}
+            onLongPress={coords => {
+              console.log('Long press at', coords);
+              // Clique longo no mapa - abre o RegisterScreen com as coordenadas
               setRegisterInitialCoords(coords);
               setShowRegisterScreen(true);
             }}

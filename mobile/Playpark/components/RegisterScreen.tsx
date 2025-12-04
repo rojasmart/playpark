@@ -181,6 +181,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({
 
   const handleUseMyLocation = async () => {
     try {
+      // Solicitar permissão explicitamente
       if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
@@ -193,39 +194,52 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({
             buttonPositive: 'OK',
           },
         );
+
         if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
           Alert.alert(
-            'Permissão negada',
-            'Não foi possível obter a sua localização',
+            'Permissão Negada',
+            'Não foi possível obter a sua localização. Por favor, ative a permissão nas definições.',
           );
           return;
         }
       }
 
-      try {
-        Geolocation.getCurrentPosition(
-          (pos: any) => {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            setLatitude(String(lat));
-            setLongitude(String(lon));
-            Alert.alert(
-              'Localização obtida',
-              `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`,
-            );
-          },
-          (err: any) => {
-            console.warn('Geolocation error', err);
-            Alert.alert('Erro', err?.message || 'Falha ao obter localização');
-          },
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 },
-        );
-      } catch (e) {
-        console.warn('UseMyLocation error', e);
-        Alert.alert('Erro', 'Falha ao obter localização');
-      }
-    } catch (e) {
-      console.warn('UseMyLocation error', e);
-      Alert.alert('Erro', 'Falha ao obter localização');
+      // Mostrar loading
+      console.log('🔍 A obter localização...');
+
+      Geolocation.getCurrentPosition(
+        (pos: any) => {
+          const { latitude: lat, longitude: lon } = pos.coords;
+          setLatitude(String(lat.toFixed(6)));
+          setLongitude(String(lon.toFixed(6)));
+          console.log('✅ Localização obtida:', { lat, lon });
+          Alert.alert(
+            'Sucesso! ✅',
+            `Localização obtida:\nLat: ${lat.toFixed(6)}\nLon: ${lon.toFixed(
+              6,
+            )}`,
+          );
+        },
+        (err: any) => {
+          console.warn('❌ Erro de geolocalização:', err);
+          Alert.alert(
+            'Erro',
+            `Não foi possível obter a localização.\nCódigo: ${
+              err.code
+            }\nMensagem: ${
+              err.message || 'Desconhecido'
+            }\n\nPor favor, verifique se o GPS está ativo.`,
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 0,
+        },
+      );
+    } catch (e: any) {
+      console.warn('❌ Exceção ao obter localização:', e);
+      Alert.alert('Erro', `Falha: ${e.message || 'Erro desconhecido'}`);
     }
   };
 

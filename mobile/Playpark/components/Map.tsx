@@ -25,6 +25,7 @@ type Props = {
     center: { lat: number; lon: number },
   ) => void;
   onMapTap?: (coords: { lat: number; lon: number }) => void;
+  onLongPress?: (coords: { lat: number; lon: number }) => void;
 };
 
 function MobileMap(
@@ -35,6 +36,7 @@ function MobileMap(
     initialZoom = 13,
     onBoundsChange,
     onMapTap,
+    onLongPress,
   }: Props,
   ref: any,
 ) {
@@ -127,8 +129,24 @@ function MobileMap(
           }
         };
 
-        // Map click -> send coords
-        map.on('click', function(e) { try { send({ type: 'mapTap', payload: { lat: e.latlng.lat, lon: e.latlng.lng } }); } catch(e){} });
+        // Adicionar lógica para clique longo para adicionar parque
+        let longPressTimeout;
+        map.on('mousedown', function (e) {
+          longPressTimeout = setTimeout(() => {
+            send({
+              type: 'addPlayground',
+              payload: { lat: e.latlng.lat, lon: e.latlng.lng },
+            });
+          }, 800); // 800ms para detectar clique longo
+        });
+
+        map.on('mouseup', function () {
+          clearTimeout(longPressTimeout);
+        });
+
+        map.on('mouseout', function () {
+          clearTimeout(longPressTimeout);
+        });
 
         function postBounds() {
           try {
@@ -226,6 +244,12 @@ function MobileMap(
               onBoundsChange?.({ north, south, east, west }, zoom, center);
             } else if (data.type === 'mapTap') {
               onMapTap?.(data.payload);
+            } else if (data.type === 'addPlayground') {
+              // Adicionar novo parque com as coordenadas recebidas do clique longo
+              const { lat, lon } = data.payload;
+              if (onLongPress) {
+                onLongPress({ lat, lon });
+              }
             }
           } catch (e) {
             // ignore
